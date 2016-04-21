@@ -11,9 +11,11 @@
 #include "vrpn_Tracker.h"
 
 #include "owl.h"
+/*
 #include "owl_planes.h"
 #include "owl_peaks.h"
 #include "owl_images.h"
+*/
 
 #define VRPN_PHASESPACE_MAXMARKERS 256
 #define VRPN_PHASESPACE_MAXRIGIDS 32
@@ -63,10 +65,12 @@ protected:
   std::vector<OWLMarker> markers;
   std::vector<OWLRigid> rigids;
   std::vector<OWLCamera> cameras;
+  /*
   std::vector<OWLPlane> planes;
   std::vector<OWLPeak> peaks;
   std::vector<OWLImage> images;
   std::vector<OWLDetectors> detectors;
+  */
 
 protected:
   int read_frame(void);

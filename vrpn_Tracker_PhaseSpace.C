@@ -268,6 +268,7 @@ int vrpn_Tracker_PhaseSpace::read_frame(void)
   case OWL_TIMESTAMP:
     owlGetIntegerv(OWL_TIMESTAMP, &ret);
     break;
+	/*
   case OWL_PLANES:
     planes.resize(VRPN_PHASESPACE_MAXPLANES);
     ret = owlGetPlanes(&planes.front(), planes.size());
@@ -288,6 +289,7 @@ int vrpn_Tracker_PhaseSpace::read_frame(void)
     ret = owlGetImages(&images.front(), images.size());
     if(ret > 0) images.resize(ret);
     break;
+	*/
   case OWL_CAMERAS:
     cameras.resize(VRPN_PHASESPACE_MAXCAMERAS);
     ret = owlGetCameras(&cameras.front(), cameras.size());
