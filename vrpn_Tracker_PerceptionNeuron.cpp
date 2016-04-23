@@ -228,8 +228,7 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 	if (!d_connection)
 		return;
 
-	// it assumes the server is configured to send a reference and displacement
-	// calculate data index for selected bone
+	// Server doesn't send neither displacement nor reference
 	for (int curSel = 0; curSel < nr; curSel++)
 	{
 		if (header->WithDisp)
@@ -241,30 +240,14 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 			}
 
 			// Displacement
-
 			pos[0] = data[dataIndex + 0] * SCALE_AXIS;
 			pos[1] = data[dataIndex + 1] * SCALE_AXIS;
 			pos[2] = data[dataIndex + 2] * SCALE_AXIS;
 
-
-			/*
-			// Euler Angles
-			d_quat[0] = -data[dataIndex + 5];
-			d_quat[1] = -data[dataIndex + 3];
-			d_quat[2] = data[dataIndex + 4];
-			d_quat[3] = 1;
-			*/
-
-			// from axis come yrot, xrot, zrot
-			//q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 4]), -Q_DEG_TO_RAD(data[dataIndex + 3]), -Q_DEG_TO_RAD(data[dataIndex + 5]));
-			//q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 5]), -Q_DEG_TO_RAD(data[dataIndex + 3]), Q_DEG_TO_RAD(data[dataIndex + 4]));
-			// The same order as the Euler angles are sent below
-			q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 3]), Q_DEG_TO_RAD(data[dataIndex + 4]), -Q_DEG_TO_RAD(data[dataIndex + 5]));
-			//q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 5]), 0,0);
-
 			// After some checking on how Quaternion works in both Unity and VRPN
-			d_quat[Q_X] = destQuat[Q_Z];
-			d_quat[Q_Y] = destQuat[Q_Y];
+			q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 4]), Q_DEG_TO_RAD(data[dataIndex + 3]), Q_DEG_TO_RAD(data[dataIndex + 5]));
+			d_quat[Q_X] = -destQuat[Q_Y];
+			d_quat[Q_Y] = -destQuat[Q_Z];
 			d_quat[Q_Z] = destQuat[Q_X];
 			d_quat[Q_W] = destQuat[Q_W];
 
@@ -292,24 +275,11 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 				pos[1] = data[dataIndex + 1];
 				pos[2] = -data[dataIndex + 2];
 
-				/*
-				// Euler Angles
-				d_quat[0] = -data[dataIndex + 5];
-				d_quat[1] = -data[dataIndex + 3];
-				d_quat[2] = data[dataIndex + 4];
+				//Not considering rotation in the quaternion
+				d_quat[0] = 0;
+				d_quat[1] = 0;
+				d_quat[2] = 0;
 				d_quat[3] = 1;
-				*/
-
-				// from axis come yrot, xrot, zrot
-				//q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 1]), -Q_DEG_TO_RAD(data[dataIndex + 0]), -Q_DEG_TO_RAD(data[dataIndex + 2]));
-				// not really necessary
-				q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 2]), -Q_DEG_TO_RAD(data[dataIndex + 0]), Q_DEG_TO_RAD(data[dataIndex + 1]));
-				//q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 2]), 0, 0);
-
-				d_quat[Q_X] = destQuat[Q_X];
-				d_quat[Q_Y] = destQuat[Q_Y];
-				d_quat[Q_Z] = destQuat[Q_Z];
-				d_quat[Q_W] = destQuat[Q_W];
 
 				if (header->AvatarIndex == 0)
 				{
@@ -320,7 +290,7 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 					d_sensor = curSel + 60;
 				}
 			}
-			else
+			else // !(curSel == 0)
 			{
 				//dataIndex = curSel * 3;
 				dataIndex = 3 + curSel * 3;
@@ -334,24 +304,11 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 				pos[1] = data[dataIndex + 1];
 				pos[2] = -data[dataIndex + 2];
 
-				/*
-				// Euler Angles
-				d_quat[0] = -data[dataIndex + 2];
-				d_quat[1] = -data[dataIndex + 0];
-				d_quat[2] = data[dataIndex + 1];
+				//Not considering rotation in the quaternion
+				d_quat[0] = 0;
+				d_quat[1] = 0;
+				d_quat[2] = 0;
 				d_quat[3] = 1;
-				*/
-
-				// from axis come yrot, xrot, zrot
-				//q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 1]), -Q_DEG_TO_RAD(data[dataIndex + 0]), -Q_DEG_TO_RAD(data[dataIndex + 2]));
-				// not really necessary
-				q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 2]), -Q_DEG_TO_RAD(data[dataIndex + 0]), Q_DEG_TO_RAD(data[dataIndex + 1]));
-				//q_from_euler(destQuat, -Q_DEG_TO_RAD(data[dataIndex + 2]), 0, 0);
-
-				d_quat[Q_X] = destQuat[Q_X];
-				d_quat[Q_Y] = destQuat[Q_Y];
-				d_quat[Q_Z] = destQuat[Q_Z];
-				d_quat[Q_W] = destQuat[Q_W];
 
 				if (header->AvatarIndex == 0)
 				{
@@ -383,7 +340,7 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 	pos[0] = -data[dataIndex + 0] * SCALE_AXIS;
 	pos[1] = data[dataIndex + 1] * SCALE_AXIS;
 	pos[2] = -data[dataIndex + 2] * SCALE_AXIS;
-	//raw positions have no rotation
+	//Not considering rotation in the quaternion
 	d_quat[0] = 0;
 	d_quat[1] = 0;
 	d_quat[2] = 0;
