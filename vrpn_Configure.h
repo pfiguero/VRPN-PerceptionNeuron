@@ -417,6 +417,14 @@
 // for, but new versions are available for the Fastrak and Liberty).
 //#define VRPN_USE_PDI
 
+//------------------------
+// Instructs VRPN to use a file vrpn_ports.txt, if available, in 
+// order to define a subset of available ports for a connection
+// such file should be present in the same directory of the 
+// executable
+// Added by Evan A.Suma
+//#define VRPN_USE_PORTS_TXT
+
 //------------------------------------------------------------------//
 // SYSTEM CONFIGURATION SECTION                                     //
 // EDIT THESE DEFINITIONS TO POINT TO OPTIONAL LIBRARIES.  THEY ARE //
