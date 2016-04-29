@@ -6,7 +6,11 @@
 // local call handlers on the connection will send the information from
 // the server to the client callbacks.
 
+// Pablo Figueroa
+// Changing the code so I can try the forwarding behavior
+
 #include <stdio.h>                      // for fprintf, stderr, printf, etc
+#include <stdlib.h> // for atoi, exit
 
 #include "vrpn_Configure.h"             // for VRPN_CALLBACK, etc
 #include "vrpn_Connection.h"
@@ -14,10 +18,11 @@
 #include "vrpn_Tracker.h"               // for vrpn_TRACKERCB, etc
 #include "vrpn_Types.h"                 // for vrpn_float64
 
-const char	*TRACKER_NAME = "Tracker0";
+char	*TRACKER_NAME = "Tracker0";
 int	CONNECTION_PORT = vrpn_DEFAULT_LISTEN_PORT_NO;	// Port for connection to listen on
+char* remoteTracker = "Tracker0@localhost";
 
-vrpn_Tracker_NULL	*ntkr;
+vrpn_Tracker_Server	*stkr;
 vrpn_Tracker_Remote	*tkr;
 vrpn_Connection		*connection;
 
@@ -30,6 +35,9 @@ vrpn_Connection		*connection;
 void	VRPN_CALLBACK handle_pos (void *, const vrpn_TRACKERCB t)
 {
 	static	int	count = 0;
+
+	// Register the message...
+	stkr->report_pose(t.sensor, t.msg_time, t.pos, t.quat);
 
 	fprintf(stderr, "%d.", t.sensor);
 	if ((++count % 20) == 0) {
@@ -58,20 +66,29 @@ void	VRPN_CALLBACK handle_acc (void *, const vrpn_TRACKERACCCB t)
 
 int main (int argc, char * argv [])
 {
-	if (argc != 1) {
-		fprintf(stderr, "Usage: %s\n", argv[0]);
+	int port;
+	if (argc > 4) {
+		fprintf(stderr, "Usage: %s [port remoteTracker localTrackerName]\n", argv[0]);
 		return -1;
 	}
+	else if (argc == 4) {
+		CONNECTION_PORT = atoi(argv[1]);
+		remoteTracker = argv[2];
+		TRACKER_NAME = argv[3];
+	}
+	// Else, leave port and remoteTracker as the default values
 
 	// explicitly open the connection
 	connection = vrpn_create_server_connection(CONNECTION_PORT);
 
-	// Open the tracker server, using this connection, 2 sensors, update 60 times/sec
-	ntkr = new vrpn_Tracker_NULL(TRACKER_NAME, connection, 2, 60.0);
+	// Open the tracker server, using this connection, 60 sensors, update 60 times/sec
+	// This is the one accepting local connections
+	// Testing for the Neuron
+	stkr = new vrpn_Tracker_Server(TRACKER_NAME, connection, 60);
 
-	// Open the tracker remote using this connection
-	fprintf(stderr, "Tracker's name is %s.\n", TRACKER_NAME);
-	tkr = new vrpn_Tracker_Remote (TRACKER_NAME, connection);
+	// Open the tracker remote
+	fprintf(stderr, "Tracker's name is %s.\n", remoteTracker);
+	tkr = new vrpn_Tracker_Remote(remoteTracker);
 
 	// Set up the tracker callback handlers
 	printf("Tracker update: '.' = pos, '/' = vel, '~' = acc\n");
@@ -84,8 +101,8 @@ int main (int argc, char * argv [])
 	 */
 	while ( 1 ) {
 		// Let the tracker server, client and connection do their things
-		ntkr->mainloop();
 		tkr->mainloop();
+		stkr->mainloop();
 		connection->mainloop();
 
 		// Sleep for 1ms so we don't eat the CPU
