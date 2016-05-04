@@ -865,6 +865,38 @@ protected:
     char *d_NIC_IP;
 };
 
+
+/// @brief Class that handles tcp connections in their own thread,
+/// so they don't hang the main server
+/// Created by Pablo Figueroa
+class VRPN_API vrpn_Connection_Threaded : public vrpn_Connection_IP {
+public:
+	virtual ~vrpn_Connection_Threaded(void)
+	{};
+	virtual int mainloop(const struct timeval *timeout = NULL)
+	{
+		return vrpn_Connection_IP::mainloop(timeout);
+	}
+protected:
+	friend VRPN_API vrpn_Connection *vrpn_get_connection_by_name(
+		const char *cname, const char *local_in_logfile_name,
+		const char *local_out_logfile_name, const char *remote_in_logfile_name,
+		const char *remote_out_logfile_name, const char *NIC_IPaddress,
+		bool force_connection);
+	vrpn_Connection_Threaded(const char *server_name,
+		int port = vrpn_DEFAULT_LISTEN_PORT_NO,
+		const char *local_in_logfile_name = NULL,
+		const char *local_out_logfile_name = NULL,
+		const char *remote_in_logfile_name = NULL,
+		const char *remote_out_logfile_name = NULL,
+		const char *NIC_IPaddress = NULL,
+		vrpn_Endpoint_IP *(*epa)(
+			vrpn_Connection *, vrpn_int32 *) = allocateEndpoint) :
+		vrpn_Connection_IP(server_name,port, local_in_logfile_name, local_out_logfile_name, remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress, epa)
+	{};
+};
+
+
 /// @brief Constructor for a Loopback connection that will basically just
 /// pass messages between objects that are connected to it.  It offers no
 /// external connections, via IP or any other mechanism.  It is useful

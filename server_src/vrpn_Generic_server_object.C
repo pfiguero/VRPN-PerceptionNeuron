@@ -87,6 +87,7 @@
 #include "vrpn_Tracker_PDI.h"
 #include "vrpn_Tracker_PhaseSpace.h"
 #include "vrpn_Tracker_PerceptionNeuron.h"
+#include "vrpn_Tracker_Proxy.h"
 #include "vrpn_Tracker_RazerHydra.h"      // for vrpn_Tracker_RazerHydra
 #include "vrpn_Tracker_Filter.h"          // for vrpn_Tracker_FilterOneEuro
 #include "vrpn_Tracker_SpacePoint.h"      // for vrpn_Tracker_SpacePoint
@@ -3513,7 +3514,7 @@ int vrpn_Generic_Server_Object::setup_Tracker_PerceptionNeuron(char *&, char *li
 	int port = 0;
 
 	// get tracker name and device
-	if (sscanf(line, "vrpn_Tracker_PerceptionNeuron %s %s %s %d %d", trackerName,
+	if (sscanf(line, "vrpn_Tracker_PerceptionNeuron %s %s %s %d", trackerName,
 		device, protocol, &port) < 4) {
 		fprintf(stderr, "Bad vrpn_Tracker_PerceptionNeuron line: %s\nProper format "
 			"is:  vrpn_Tracker_PerceptionNeuron [trackerName] [device] "
@@ -3542,6 +3543,33 @@ int vrpn_Generic_Server_Object::setup_Tracker_PerceptionNeuron(char *&, char *li
 	config_file = config_file + 1; // Unused parameter, avoid warning.
 	return -1;
 #endif
+}
+
+int vrpn_Generic_Server_Object::setup_Tracker_Proxy(char *&, char *line,
+	FILE *config_file)
+{
+	char trackerName[LINESIZE];
+	char remoteService[LINESIZE];
+	int nSensors;
+
+	// get tracker name and remote Service
+	if (sscanf(line, "vrpn_Tracker_Proxy %s %s %d", trackerName, remoteService, &nSensors) < 3) {
+		fprintf(stderr, "Bad vrpn_Tracker_Proxy line: %s\nProper format "
+			"is:  vrpn_Tracker_Proxy trackerName remoteServiceName nSensors\n",
+			line);
+		return -1;
+	}
+
+	vrpn_Tracker_Proxy *pstracker = new vrpn_Tracker_Proxy(trackerName, connection, remoteService, nSensors);
+
+	if (!pstracker->enable(true)) {
+		fprintf(stderr, "Error, unable to enable Tracker Proxy.\n");
+		delete pstracker;
+		return -1;
+	}
+	_devices->add(pstracker);
+
+	return 0;
 }
 
 int vrpn_Generic_Server_Object::setup_Tracker_RazerHydra(char *&pch, char *line,
@@ -5241,7 +5269,10 @@ vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
                 else if (VRPN_ISIT("vrpn_YEI_3Space_Sensor_Wireless")) {
                     VRPN_CHECK(setup_YEI_3Space_Sensor_Wireless);
                 }
-                else {                         // Never heard of it
+				else if (VRPN_ISIT("vrpn_Tracker_Proxy")) {
+					VRPN_CHECK(setup_Tracker_Proxy);
+				}
+				else {                         // Never heard of it
                     sscanf(line, "%511s", s1); // Find out the class name
                     fprintf(stderr, "vrpn_server: Unknown Device: %s\n", s1);
                     if (d_bail_on_open_error) {

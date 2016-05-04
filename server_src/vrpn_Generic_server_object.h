@@ -163,6 +163,8 @@ protected:
 
     template <typename T>
     int templated_setup_HID_device_name_only(char *&pch, char *line, FILE *);
+
+	int setup_Tracker_Proxy(char *&, char *line, FILE *config_file);
 };
 
 #endif

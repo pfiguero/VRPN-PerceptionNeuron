@@ -5425,10 +5425,20 @@ vrpn_Connection *vrpn_get_connection_by_name(
 
         int is_file = !strncmp(cname, "file:", 5);
 
+		// Threaded tcp connections. 
+		// Added by Pablo Figueroa
+		int is_tcp = !strncmp(cname, "tcp:", 4);
+
         if (is_file) {
             c = new vrpn_File_Connection(cname, local_in_logfile_name,
                                          local_out_logfile_name);
-        } else {
+        } else if (is_tcp) {
+			int port = vrpn_get_port_number(cname);
+			c = new vrpn_Connection_Threaded(
+				cname, port, local_in_logfile_name, local_out_logfile_name,
+				remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress);
+		}
+		else {
             int port = vrpn_get_port_number(cname);
             c = new vrpn_Connection_IP(
                 cname, port, local_in_logfile_name, local_out_logfile_name,
