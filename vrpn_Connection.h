@@ -13,6 +13,10 @@
 
 struct timeval;
 
+// For vrpn_Connection_Threaded
+#include <thread>
+#include <chrono>
+
 // Don't complain about using sprintf() when using Visual Studio.
 #ifdef _MSC_VER
 #pragma warning(disable : 4995 4996)
@@ -866,16 +870,28 @@ protected:
 };
 
 
-/// @brief Class that handles tcp connections in their own thread,
-/// so they don't hang the main server
+/// @brief Class that handles connections with their own thread,
+/// so their mainloop doesn't hang the main one... the first attempt is
+/// to be sure that there is only one method running in all threads,
+/// so mainloop could be run at the same time as other things in vrpn
 /// Created by Pablo Figueroa
+//
+// Thread management: https://rafalcieslak.wordpress.com/2014/05/16/c11-stdthreads-managed-by-a-designated-class/
+// 
 class VRPN_API vrpn_Connection_Threaded : public vrpn_Connection_IP {
 public:
 	virtual ~vrpn_Connection_Threaded(void)
-	{};
+	{
+		stop_thread = true;
+		if (my_thread.joinable()) my_thread.join();
+	};
 	virtual int mainloop(const struct timeval *timeout = NULL)
 	{
 		return vrpn_Connection_IP::mainloop(timeout);
+	}
+	void start_thread() {
+		// This will start the thread. Notice move semantics!
+		my_thread = std::thread(&vrpn_Connection_Threaded::ThreadMain, this);
 	}
 protected:
 	friend VRPN_API vrpn_Connection *vrpn_get_connection_by_name(
@@ -892,8 +908,18 @@ protected:
 		const char *NIC_IPaddress = NULL,
 		vrpn_Endpoint_IP *(*epa)(
 			vrpn_Connection *, vrpn_int32 *) = allocateEndpoint) :
-		vrpn_Connection_IP(server_name,port, local_in_logfile_name, local_out_logfile_name, remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress, epa)
+		vrpn_Connection_IP(server_name,port, local_in_logfile_name, local_out_logfile_name, remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress, epa),
+		my_thread()
 	{};
+private:
+	std::thread my_thread;
+	bool stop_thread = false;
+	void ThreadMain() {
+		while (!stop_thread) {
+			// Do something useful, e.g:
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+	}
 };
 
 

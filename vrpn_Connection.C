@@ -5427,12 +5427,13 @@ vrpn_Connection *vrpn_get_connection_by_name(
 
 		// Threaded tcp connections. 
 		// Added by Pablo Figueroa
-		int is_tcp = !strncmp(cname, "tcp:", 4);
+		int is_tcpThreaded = !strncmp(cname, "tcp:", 4);
 
         if (is_file) {
             c = new vrpn_File_Connection(cname, local_in_logfile_name,
                                          local_out_logfile_name);
-        } else if (is_tcp) {
+        } else if (is_tcpThreaded) {
+			fprintf(stderr, "It should create a thread.\n");
 			int port = vrpn_get_port_number(cname);
 			c = new vrpn_Connection_Threaded(
 				cname, port, local_in_logfile_name, local_out_logfile_name,
@@ -5795,7 +5796,7 @@ void vrpn_Connection_IP::server_check_for_incoming_connections(
                 (addr_num >> 16) & 0xff, (addr_num >> 8) & 0xff,
                 addr_num & 0xff);
         printf("vrpn: Connection request received from %s: %s\n", fromname,
-               msg);
+               msg);    
 
         // Make sure that the request is well-formed.  That is, it
         // has an ASCII string name of a host followed by an integer
