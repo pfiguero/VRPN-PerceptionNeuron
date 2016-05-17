@@ -2549,7 +2549,12 @@ static int vrpn_start_server(const char *machine, char *server_name, char *args,
 
         /* Close all files except stdout and stderr. */
         /* This prevents a hung child from keeping devices open */
+		// changed by EAS for Android compatibility
+#ifdef _M_ARM
+		num_descriptors = sysconf(_SC_OPEN_MAX);
+#else
         num_descriptors = getdtablesize();
+#endif
         for (loop = 0; loop < num_descriptors; loop++) {
             if ((loop != 1) && (loop != 2)) {
                 close(loop);
@@ -2610,6 +2615,9 @@ static int vrpn_start_server(const char *machine, char *server_name, char *args,
     defined(__APPLE__)
             /* hpux include files have the wrong declaration */
             deadkid = wait3((int *)&status, WNOHANG, NULL);
+#elif defined(_M_ARM)
+			// changed by EAS for Android compatibility
+			deadkid = waitpid(-1, &status, WNOHANG);
 #else
             deadkid = wait3(&status, WNOHANG, NULL);
 #endif
