@@ -37,6 +37,7 @@ public:
 			}
 		}
 		handler = h;
+		fprintf(stderr, "PerceptionNeuron tcpPort:[%d] udpPort:[%d] \n", tcpPort, udpPort);
 		if (tcpPort != -1 && sockTCPRef == NULL)
 		{
 			sockTCPRef = BRConnectTo(ipNeuron, tcpPort);
@@ -51,6 +52,10 @@ public:
 			if (sockUDPRef)
 			{
 				resp = true;
+			}
+			else
+			{
+				fprintf(stderr, "UDP error:[%s] \n", BRGetLastErrorMessage());
 			}
 		}
 		return resp;
