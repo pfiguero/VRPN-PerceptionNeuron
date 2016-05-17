@@ -260,6 +260,12 @@ paket-files/
 **/*.bak
 **/submodules
 
+# Ignore this from my particular VRPN distribution
+build/*
+libAndroid/*
+vrpnlibAndroid/*
+vrpnAndroid/*
+vrpn - Copy.sln
 
 
 
