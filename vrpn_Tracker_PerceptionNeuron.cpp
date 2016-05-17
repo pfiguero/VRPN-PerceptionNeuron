@@ -37,6 +37,7 @@ public:
 			}
 		}
 		handler = h;
+		fprintf(stderr, "PerceptionNeuron tcpPort:[%d] udpPort:[%d] \n", tcpPort, udpPort);
 		if (tcpPort != -1 && sockTCPRef == NULL)
 		{
 			sockTCPRef = BRConnectTo(ipNeuron, tcpPort);
@@ -51,6 +52,10 @@ public:
 			if (sockUDPRef)
 			{
 				resp = true;
+			}
+			else
+			{
+				fprintf(stderr, "UDP error:[%s] \n", BRGetLastErrorMessage());
 			}
 		}
 		return resp;
@@ -161,7 +166,7 @@ int vrpn_Tracker_PerceptionNeuron::handle_dropped_last_connection_message(void *
 }
 
 vrpn_Tracker_PerceptionNeuron::vrpn_Tracker_PerceptionNeuron(const char *name, vrpn_Connection *c, const char* device, const char* protocol, int port)
-: vrpn_Tracker(name, c)
+	: vrpn_Tracker(name, c)
 {
 #ifdef DEBUG
 	printf("%s\n", __PRETTY_FUNCTION__);
@@ -176,7 +181,7 @@ vrpn_Tracker_PerceptionNeuron::vrpn_Tracker_PerceptionNeuron(const char *name, v
 	strcpy(ipNeuron, device);
 
 	// Register the handler for all messages
-	register_autodeleted_handler( 
+	register_autodeleted_handler(
 		c->register_message_type(vrpn_got_first_connection),
 		handle_first_connection_message, this);
 	register_autodeleted_handler(
@@ -352,7 +357,7 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 	}
 	else
 	{
-		d_sensor = nr+60;
+		d_sensor = nr + 60;
 	}
 	// send time out in Neuron's time? Not implemented yet...
 	vrpn_gettimeofday(&timestamp, NULL);
