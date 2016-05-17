@@ -3,6 +3,12 @@
 
 #define SCALE_AXIS (0.01)
 
+#include <thread>
+#include <mutex>
+#include <chrono>
+#define MAIN_LOOP_THREAD_TIMEOUT 16
+const int MAX_SENSORS_NEURON = 122*6; // adding extra space for reference. assuming worst case, when both displacement and rotation comes. 
+const int MAX_NUM_SENSORS_PER_SUIT = 59;
 
 #ifdef VRPN_INCLUDE_PERCEPTION_NEURON
 //#define DEBUG
@@ -18,6 +24,7 @@ public:
 		if (singleton == NULL)
 		{
 			singleton = new PerceptionNeuronHandler();
+			singleton->startThread();
 		}
 		return singleton;
 	}
@@ -83,7 +90,29 @@ public:
 	{
 		if (handler != NULL && BRGetSocketStatus(sender) == CS_Running)
 		{
-			handler->handleData(header, data);
+			int numberOfFloats = getNumberOfFloats(header);
+			// Securely copy the information and leave the other thread to read it
+			std::lock_guard<std::mutex> lock(mtx);
+			memcpy(&myHeader, header, sizeof(BvhDataHeader));
+			memcpy(myData, data, numberOfFloats * sizeof(float));
+			itsBeingProcessed = false;
+			//fprintf(stderr, "[Thread %lu] handleData in bvhFrameDataReceived\n", (unsigned long)std::hash<std::thread::id>()(std::this_thread::get_id()));
+		}
+	}
+	~PerceptionNeuronHandler()
+	{
+		terminateThread = true;
+		delete[] myData;
+		implThread->join();
+	}
+	void processData()
+	{
+		std::lock_guard<std::mutex> lock(mtx);
+		if (!itsBeingProcessed)
+		{
+			handler->handleData(&myHeader, myData);
+			itsBeingProcessed = true;
+			//fprintf(stderr, "[Thread %lu] processData\n", (unsigned long)std::hash<std::thread::id>()(std::this_thread::get_id()));
 		}
 	}
 private:
@@ -92,17 +121,71 @@ private:
 	vrpn_Tracker_PerceptionNeuron* handler;
 	SOCKET_REF sockTCPRef;
 	SOCKET_REF sockUDPRef;
+	std::thread* implThread;
+	bool terminateThread;
+	
+	// shared data and mutex
+	std::mutex mtx;
+	bool itsBeingProcessed;
+	BvhDataHeader myHeader;
+	float* myData;
 
 	PerceptionNeuronHandler()
 	{
 		handler = NULL;
 		sockTCPRef = NULL;
 		sockUDPRef = NULL;
-
-		BRRegisterFrameDataCallback(this, bvhFrameDataReceived);
-		BRRegisterCalculationDataCallback(this, CalcFrameDataReceive);
-
+		implThread = NULL;
+		itsBeingProcessed = true;
+		terminateThread = false;
+		myData = new float[MAX_SENSORS_NEURON * 6];
 	};
+	static void doThisInThread()
+	{
+		BRRegisterFrameDataCallback(singleton, bvhFrameDataReceived);
+		BRRegisterCalculationDataCallback(singleton, CalcFrameDataReceive);
+
+		while (!singleton->terminateThread)
+		{
+			// making time for the Neuron's system to call the callbacks
+			std::this_thread::sleep_for(std::chrono::milliseconds(MAIN_LOOP_THREAD_TIMEOUT));
+		}
+	}
+	void startThread()
+	{
+		implThread = new std::thread(doThisInThread);
+	}
+	int getNumberOfFloats(BvhDataHeader* header)
+	{
+		int dataIndex = 0;
+		int nr = MAX_NUM_SENSORS_PER_SUIT;
+
+		int curSel = nr - 1;
+		if (header->WithDisp)
+		{
+			dataIndex = curSel * 6;
+			if (header->WithReference)
+			{
+				dataIndex += 6;
+			}
+
+			// plus final data
+			dataIndex += 6;
+		}
+		else // ! (header->WithDisp)
+		{
+			dataIndex = 3 + curSel * 3;
+			if (header->WithReference)
+			{
+				dataIndex += 6;
+			}
+
+			// plus final data
+			dataIndex += 3;
+
+		}
+		return dataIndex;
+	}
 };
 
 PerceptionNeuronHandler* PerceptionNeuronHandler::singleton = NULL;
@@ -225,13 +308,14 @@ bool vrpn_Tracker_PerceptionNeuron::enableTracker(bool enable)
 void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* data)
 {
 	int dataIndex = 0;
-	int nr = 59;
+	int nr = MAX_NUM_SENSORS_PER_SUIT;
 	q_type destQuat;
+
+	if (!d_connection)
+		return;
 
 	// From the NeuronDataReader Runtime API Documentation_D16.pdf
 	// and Cdemo_MFCDlg::showBvhBoneInfo
-	if (!d_connection)
-		return;
 
 	// Server doesn't send neither displacement nor reference
 	for (int curSel = 0; curSel < nr; curSel++)
@@ -385,6 +469,7 @@ void vrpn_Tracker_PerceptionNeuron::send_report(void)
 
 void vrpn_Tracker_PerceptionNeuron::mainloop()
 {
+	PerceptionNeuronHandler::getInstance()->processData();
 	return;
 }
 

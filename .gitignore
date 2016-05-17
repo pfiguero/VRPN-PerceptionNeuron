@@ -255,7 +255,8 @@ paket-files/
 
 **/CMakeCache.txt
 **/CMakeFiles
-**/*.vcxproj*
+# I need the projects!!
+# **/*.vcxproj*
 **/*.bak
 **/submodules
 
