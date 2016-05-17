@@ -5441,9 +5441,14 @@ vrpn_Connection *vrpn_get_connection_by_name(
             c = new vrpn_File_Connection(cname, local_in_logfile_name,
                                          local_out_logfile_name);
         } else if (is_tcpThreaded) {
-			fprintf(stderr, "It should create a thread.\n");
+			//fprintf(stderr, "It should create a thread.\n");
 			int port = vrpn_get_port_number(cname);
+			/*
 			c = new vrpn_Connection_Threaded(
+				cname, port, local_in_logfile_name, local_out_logfile_name,
+				remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress);
+				*/
+			c = new vrpn_Connection_IP(
 				cname, port, local_in_logfile_name, local_out_logfile_name,
 				remote_in_logfile_name, remote_out_logfile_name, NIC_IPaddress);
 		}

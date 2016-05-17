@@ -878,6 +878,7 @@ protected:
 //
 // Thread management: https://rafalcieslak.wordpress.com/2014/05/16/c11-stdthreads-managed-by-a-designated-class/
 // 
+/*
 class VRPN_API vrpn_Connection_Threaded : public vrpn_Connection_IP {
 public:
 	virtual ~vrpn_Connection_Threaded(void)
@@ -921,7 +922,7 @@ private:
 		}
 	}
 };
-
+*/
 
 /// @brief Constructor for a Loopback connection that will basically just
 /// pass messages between objects that are connected to it.  It offers no
