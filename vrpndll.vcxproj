@@ -246,7 +246,7 @@
     <Link>
       <OutputFile>.\pc_win32/DLL/Debug/vrpndll.dll</OutputFile>
       <SuppressStartupBanner>false</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib64;$(DEPS)\neuron\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\pc_win32/DLL/Debug/vrpndll.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -379,7 +379,7 @@
     <Link>
       <OutputFile>.\pc_win32/DLL/Release/vrpndll.dll</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Lib;$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib64;$(DEPS)\neuron\lib\x64</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>.\pc_win32/DLL/Release/vrpndll.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>

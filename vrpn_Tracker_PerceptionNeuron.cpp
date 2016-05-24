@@ -310,6 +310,7 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 	int dataIndex = 0;
 	int nr = MAX_NUM_SENSORS_PER_SUIT;
 	q_type destQuat;
+	q_type qX, qY, qZ;
 
 	if (!d_connection)
 		return;
@@ -334,12 +335,24 @@ void vrpn_Tracker_PerceptionNeuron::handleData(BvhDataHeader* header, float* dat
 			pos[2] = data[dataIndex + 2] * SCALE_AXIS;
 
 			// After some checking on how Quaternion works in both Unity and VRPN
+			/*
 			q_from_euler(destQuat, Q_DEG_TO_RAD(data[dataIndex + 4]), Q_DEG_TO_RAD(data[dataIndex + 3]), Q_DEG_TO_RAD(data[dataIndex + 5]));
 			d_quat[Q_X] = -destQuat[Q_Y];
 			d_quat[Q_Y] = -destQuat[Q_Z];
 			d_quat[Q_Z] = destQuat[Q_X];
 			d_quat[Q_W] = destQuat[Q_W];
-
+			*/
+			{
+				q_make(qX, 1.0, 0.0, 0.0, Q_DEG_TO_RAD(data[dataIndex + 3]));
+				q_make(qY, 0.0, 1.0, 0.0, Q_DEG_TO_RAD(data[dataIndex + 4]));
+				q_make(qZ, 0.0, 0.0, 1.0, Q_DEG_TO_RAD(data[dataIndex + 5]));
+				q_mult(destQuat, qY, qX);
+				q_mult(destQuat, destQuat, qZ);
+				d_quat[Q_X] = destQuat[Q_X];
+				d_quat[Q_Y] = destQuat[Q_Y];
+				d_quat[Q_Z] = destQuat[Q_Z];
+				d_quat[Q_W] = destQuat[Q_W];
+			}
 			if (header->AvatarIndex == 0)
 			{
 				d_sensor = curSel;

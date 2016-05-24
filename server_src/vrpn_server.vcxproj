@@ -228,7 +228,7 @@
     <Link>
       <OutputFile>.\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib64;$(DEPS)\neuron\lib\x64</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
@@ -354,7 +354,7 @@
     <Link>
       <OutputFile>.\../pc_win32/server_src/vrpn_server/Release/vrpn_server.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib64;$(DEPS)\neuron\lib\x64</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>.\../pc_win32/server_src/vrpn_server/Release/vrpn_server.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
