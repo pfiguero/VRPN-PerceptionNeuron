@@ -28,5 +28,8 @@ public:
   virtual void mainloop();
 
   static int VRPN_CALLBACK handle_update_rate_request(void *userdata, vrpn_HANDLERPARAM p);  
+
+private:
+	vrpn_Tracker_Remote *tkr;
 };
 #endif

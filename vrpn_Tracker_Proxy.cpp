@@ -1,9 +1,5 @@
 #include "vrpn_Tracker_Proxy.h"
 
-// temporal. These should be in the header, and not static
-static vrpn_Tracker_Remote *tkr = NULL;
-static	int	count = 0;
-
 /*****************************************************************************
 *
 Callback handlers
