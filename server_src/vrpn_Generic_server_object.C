@@ -105,6 +105,8 @@
 #include "vrpn_YEI_3Space.h" // for vrpn_YEI_3Space_Sensor, etc
 #include "vrpn_Zaber.h"      // for vrpn_Zaber
 
+#include "vrpn_WWA_Server.h"
+
 class VRPN_API vrpn_Connection;
 
 /// File-static constant of max line size.
@@ -3572,6 +3574,79 @@ int vrpn_Generic_Server_Object::setup_Tracker_Proxy(char *&, char *line,
 	return 0;
 }
 
+int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
+	FILE *config_file)
+{
+
+	char nameTxt[LINESIZE];
+	char consoleDeviceTxt[LINESIZE];
+	char nameHeadsTrk[LINESIZE];
+	char nameBodiesTrk[LINESIZE];
+	char nameCars[LINESIZE];
+	char expDirectory[LINESIZE];
+	char headsDeviceTrk[LINESIZE];
+	char bodiesDeviceTrk[LINESIZE];
+	char carsDevice[LINESIZE];
+	bool errorInLine = false;
+	bool hasRealTrackers = true;
+	int nSHeads, nSBodies;
+
+	nameTxt[0] = consoleDeviceTxt[0] = nameHeadsTrk[0] = nameBodiesTrk[0] = nameCars[0] =
+		expDirectory[0] = headsDeviceTrk[0] = bodiesDeviceTrk[0] = carsDevice[0] = '\0';
+	// get tracker name and device
+/*
+# vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments -notrackers
+# vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments TrackerP@localhost Tracker0@localhost CarGenerator@localhost
+*/
+	if (sscanf(line, "vrpn_WWA_Server %s %s %s %d %s %d %s %s %s %s %s", nameTxt,
+		consoleDeviceTxt, nameHeadsTrk, &nSHeads, nameBodiesTrk, &nSBodies, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice) <11) {
+		if (strcmp(headsDeviceTrk,"-notrackers") == 0)
+		{
+			hasRealTrackers = false;
+		}
+		else
+		{
+			errorInLine = true;
+		}
+	}
+	if (errorInLine)
+	{
+		fprintf(stderr, "Bad vrpn_WWA_Server line: %s\nProper format "
+			"is:  vrpn_Tracker_Phasespace txtName consoleDevice "
+			"nameHeadsTrk, numSensorsHead, nameBodiesTrk, numSensorsBodies, nameCars, expDirectory, (-notrackers | headsDeviceTrk, bodiesDeviceTrk, carsDevice) \n",
+			line);
+		return -1;
+	}
+
+#ifdef VRPN_WWA_SERVER
+	vrpn_WWA_Server *wwa;
+	if(!hasRealTrackers)
+	{
+		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, nameBodiesTrk, nSBodies, nameCars, expDirectory);
+	}
+	else
+	{
+		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, nameBodiesTrk, nSBodies, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice);
+	}
+	/*
+	if (!wwa->set_enable(true)) {
+		fprintf(stderr, "Error, can't enable WWA Server.\n");
+		delete wwa;
+		return -1;
+	}
+	*/
+	wwa->addDevices(_devices);
+
+	return 0;
+
+#else
+	fprintf(stderr, "vrpn_server: Can't open WWA Server: "
+		"VRPN_WWA_SERVER not defined in "
+		"vrpn_Configure.h!\n");
+	return -1;
+#endif
+}
+
 int vrpn_Generic_Server_Object::setup_Tracker_RazerHydra(char *&pch, char *line,
                                                          FILE *config_file)
 {
@@ -5271,6 +5346,9 @@ vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
                 }
 				else if (VRPN_ISIT("vrpn_Tracker_Proxy")) {
 					VRPN_CHECK(setup_Tracker_Proxy);
+				}
+				else if (VRPN_ISIT("vrpn_WWA_Server")) {
+					VRPN_CHECK(setup_WWA_Server);
 				}
 				else {                         // Never heard of it
                     sscanf(line, "%511s", s1); // Find out the class name

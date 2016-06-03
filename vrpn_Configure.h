@@ -425,6 +425,11 @@
 // Added by Evan A.Suma
 //#define VRPN_USE_PORTS_TXT
 
+//------------------------
+// Instructs VRPN to compile code for the WWA_server demo
+// Added by Pablo Figueroa
+#define VRPN_WWA_SERVER
+
 //------------------------------------------------------------------//
 // SYSTEM CONFIGURATION SECTION                                     //
 // EDIT THESE DEFINITIONS TO POINT TO OPTIONAL LIBRARIES.  THEY ARE //
