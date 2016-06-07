@@ -3587,17 +3587,20 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 	char headsDeviceTrk[LINESIZE];
 	char bodiesDeviceTrk[LINESIZE];
 	char carsDevice[LINESIZE];
+	char firstToken[LINESIZE];
 	bool errorInLine = false;
 	bool hasRealTrackers = true;
 	int nSHeads, nSBodies;
+	int h1_1, h1_2, h2_1, h2_2;
+	int b1_1, b1_2, b2_1, b2_2;
 
 	nameTxt[0] = consoleDeviceTxt[0] = nameHeadsTrk[0] = nameBodiesTrk[0] = nameCars[0] =
 		expDirectory[0] = headsDeviceTrk[0] = bodiesDeviceTrk[0] = carsDevice[0] = '\0';
-	// get tracker name and device
+	// get the several lines for configuration, until end_vrpn_WWA_Server
 /*
 # vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments -notrackers
 # vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments TrackerP@localhost Tracker0@localhost CarGenerator@localhost
-*/
+
 	if (sscanf(line, "vrpn_WWA_Server %s %s %s %d %s %d %s %s %s %s %s", nameTxt,
 		consoleDeviceTxt, nameHeadsTrk, &nSHeads, nameBodiesTrk, &nSBodies, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice) <11) {
 		if (strcmp(headsDeviceTrk,"-notrackers") == 0)
@@ -3609,11 +3612,90 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 			errorInLine = true;
 		}
 	}
+	*/
+
+	if (sscanf(line, "vrpn_WWA_Server %s %s", nameTxt, consoleDeviceTxt) <2) {
+		errorInLine = true;
+	}
+	
+	enum { inHead, inBodies, inCars, inExpDir, inTrackers, endLine } curLine;
+	curLine = inHead;
+
+	// read file for the WWA configuration
+	// Parse all up to just "end_vrpn_WWA_Server" to consume their
+	// place in the input stream.
+	while (fgets(line, LINESIZE, config_file) != NULL) {
+
+		// cut off comments
+		for (int i = 0; i < LINESIZE && line[i] != '\0'; i++) {
+			if (line[i] == '#') {
+				line[i] = '\0';
+				break;
+			}
+		}
+
+		sscanf(line, "%s", firstToken);
+		line += strlen(firstToken) +1;
+		if (strcmp(firstToken, "end_vrpn_WWA_Server") == 0)
+		{
+			break;
+		}
+
+		switch (curLine)
+		{
+		case inHead:
+			strcpy(nameHeadsTrk, firstToken);
+			if (sscanf(line, "%d sensors1 %d %d sensors2 %d %d", &nSHeads, &h1_1, &h1_2, &h2_1, &h2_2) < 5) {
+				errorInLine = true;
+			}
+			curLine = inBodies;
+			break;
+		case inBodies:
+			strcpy(nameBodiesTrk, firstToken);
+			if (sscanf(line, "%d sensors1 %d %d sensors2 %d %d", &nSBodies, &b1_1, &b1_2, &b2_1, &b2_2) < 5) {
+				errorInLine = true;
+			}
+			curLine = inCars;
+			break;
+		case inCars:
+			strcpy(nameCars, firstToken);
+			curLine = inExpDir;
+			break;
+		case inExpDir:
+			strcpy(expDirectory, firstToken);
+			curLine = inTrackers;
+			break;
+		case inTrackers:
+			strcpy(headsDeviceTrk, firstToken);
+			if (sscanf(line, "%s %s", bodiesDeviceTrk, carsDevice) < 2) {
+				if (strcmp(headsDeviceTrk, "-notrackers") == 0)
+				{
+					hasRealTrackers = false;
+				}
+				else
+				{
+					errorInLine = true;
+				}
+			}
+			curLine = endLine;
+			break;
+		default:
+			fprintf(stderr, "Error parsing the vrpn_WWA_Server section. Line: %s\n", line);
+			errorInLine = true;
+			break;
+		}
+	}
+		
 	if (errorInLine)
 	{
-		fprintf(stderr, "Bad vrpn_WWA_Server line: %s\nProper format "
-			"is:  vrpn_Tracker_Phasespace txtName consoleDevice "
-			"nameHeadsTrk, numSensorsHead, nameBodiesTrk, numSensorsBodies, nameCars, expDirectory, (-notrackers | headsDeviceTrk, bodiesDeviceTrk, carsDevice) \n",
+		fprintf(stderr, "Bad vrpn_WWA_Server line: %s\nProper format is: "
+			"vrpn_WWA_Server <txtName> <consoleDevice> \n"
+			"<nameHeadsTrk> <numSensorsHead> sensors1 <head1Sensor1> <head1Sensor2> sensors2 <head2Sensor1> <head2Sensor2> \n"
+			"<nameBodiesTrk> <numSensorsBodies> sensors1 <body1Sensor1> <body1SensorLast> sensors2 <body2Sensor1> <body2SensorLast> \n"
+			"<nameCars>\n"
+			"<expDirectory>\n"
+			"(-notrackers | <headsDeviceTrk>, <bodiesDeviceTrk>, <carsDevice>) \n" 
+			"end_vrpn_WWA_Server\n",
 			line);
 		return -1;
 	}

@@ -2,6 +2,8 @@
 #define VRPN_WWA_SERVER_H
 
 #include <string>
+#include <thread>
+#include <atomic>
 
 #include "vrpn_Configure.h"   // IWYU pragma: keep
 
@@ -10,7 +12,6 @@
 #include <vrpn_Text.h> 
 
 #include "vrpn_MainloopContainer.h" // for vrpn_MainloopContainer
-
 
 class VRPN_API vrpn_WWA_Server : public vrpn_Text_Sender {
 public:
@@ -27,6 +28,8 @@ public:
 	virtual void mainloop();
 
 	const std::string& getExpDir() { return expDir; }
+
+	void loadFile(const char* filename);
 
 	/// Handlers
 	static int VRPN_CALLBACK
@@ -47,8 +50,26 @@ private:
 	vrpn_Tracker_Remote* bodyTrackerReader;
 	vrpn_Tracker_Remote* carReader;
 
+	vrpn_Tracker_Remote* fileHeadTrackerReader;
+	vrpn_Tracker_Remote* fileBodyTrackerReader;
+	vrpn_Tracker_Remote* fileCarReader;
+	vrpn_Text_Receiver* fileMsgReader;
+	vrpn_File_Connection* fcn_fileReader;
+
 	bool hasRealTrackers;
 
+	std::thread* fileMngrThread;
+	std::string	fileToLoad;
+	std::string	headDevName;
+	std::string	bodyDevName;
+	std::string	carsDevName;
+	std::string msgDevName;
+
+	enum ThreadStates { notInit = -1,ready = 0, startReadingFiles, readingFiles, filesReady, endThread };
+	std::atomic<ThreadStates> threadState;
+
+	void createFileThread();
+	void mainFileMngrThread();
 };
 
 
@@ -61,6 +82,11 @@ Callback handlers
 void VRPN_CALLBACK handle_console_commands(void *userdata, const vrpn_TEXTCB t);
 void VRPN_CALLBACK handle_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
 void VRPN_CALLBACK handle_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handle_cars(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handle_file_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handle_file_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handle_file_cars(void *userdata, const vrpn_TRACKERCB t);
+void VRPN_CALLBACK handle_file_msgs(void *userdata, const vrpn_TEXTCB t);
 
 
 #endif
