@@ -3577,6 +3577,7 @@ int vrpn_Generic_Server_Object::setup_Tracker_Proxy(char *&, char *line,
 int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 	FILE *config_file)
 {
+#ifdef VRPN_WWA_SERVER
 
 	char nameTxt[LINESIZE];
 	char consoleDeviceTxt[LINESIZE];
@@ -3598,21 +3599,14 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 		expDirectory[0] = headsDeviceTrk[0] = bodiesDeviceTrk[0] = carsDevice[0] = '\0';
 	// get the several lines for configuration, until end_vrpn_WWA_Server
 /*
-# vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments -notrackers
-# vrpn_WWA_Server WWAMsgs Console@localhost Heads 2 Bodies 120 Cars E:\WWA\Experiments TrackerP@localhost Tracker0@localhost CarGenerator@localhost
-
-	if (sscanf(line, "vrpn_WWA_Server %s %s %s %d %s %d %s %s %s %s %s", nameTxt,
-		consoleDeviceTxt, nameHeadsTrk, &nSHeads, nameBodiesTrk, &nSBodies, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice) <11) {
-		if (strcmp(headsDeviceTrk,"-notrackers") == 0)
-		{
-			hasRealTrackers = false;
-		}
-		else
-		{
-			errorInLine = true;
-		}
-	}
-	*/
+vrpn_WWA_Server WWAMsgs Console@localhost:3885
+Heads 2 sensors1 0 5 sensors2 6 12
+Bodies 120 sensors1 0 59 sensors2 60 119
+Cars
+C:\Users\pfigueroa\Desktop\logFiles
+TrackerP@localhost Tracker0@localhost CarGenerator@localhost (or -notrackers)
+end_vrpn_WWA_Server
+*/
 
 	if (sscanf(line, "vrpn_WWA_Server %s %s", nameTxt, consoleDeviceTxt) <2) {
 		errorInLine = true;
@@ -3700,15 +3694,16 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 		return -1;
 	}
 
-#ifdef VRPN_WWA_SERVER
 	vrpn_WWA_Server *wwa;
 	if(!hasRealTrackers)
 	{
-		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, nameBodiesTrk, nSBodies, nameCars, expDirectory);
+		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2, 
+			nameBodiesTrk, nSBodies, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory);
 	}
 	else
 	{
-		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, nameBodiesTrk, nSBodies, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice);
+		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2, 
+			nameBodiesTrk, nSBodies, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice);
 	}
 	/*
 	if (!wwa->set_enable(true)) {

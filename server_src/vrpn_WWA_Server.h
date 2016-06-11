@@ -15,10 +15,12 @@
 
 class VRPN_API vrpn_WWA_Server : public vrpn_Text_Sender {
 public:
-	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, const char *nameBodiesTrk, int nB, 
+	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, 
+		int h1_1, int h1_2, int h2_1, int h2_2, const char *nameBodiesTrk, int nB, int b1_1, int b1_2, int b2_1, int b2_2,
 		const char *nameCars, const char *expDirectory);
 
-	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, const char *nameBodiesTrk, int nB, 
+	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, 
+		int h1_1, int h1_2, int h2_1, int h2_2, const char *nameBodiesTrk, int nB, int b1_1, int b1_2, int b2_1, int b2_2,
 		const char *nameCars, const char *expDirectory, const char *headsDeviceTrk, const char *bodiesDeviceTrk, const char *carsDevice);
 
 	~vrpn_WWA_Server();
@@ -43,7 +45,9 @@ public:
 private:
 	vrpn_Text_Receiver* console;
 	vrpn_Tracker_Server* headTracker;
+	int nHeadSensors;
 	vrpn_Tracker_Server* bodiesTracker;
+	int nBodySensors;
 	vrpn_Tracker_Server* carsServer;
 	std::string	expDir;
 	vrpn_Tracker_Remote* headTrackerReader;
@@ -56,7 +60,10 @@ private:
 	vrpn_Text_Receiver* fileMsgReader;
 	vrpn_File_Connection* fcn_fileReader;
 
-	bool hasRealTrackers;
+	bool hasRealTrackers; // true if real trackers are connected
+
+	bool u1FromFile;
+	bool u2FromFile;
 
 	std::thread* fileMngrThread;
 	std::string	fileToLoad;
@@ -65,28 +72,34 @@ private:
 	std::string	carsDevName;
 	std::string msgDevName;
 
+	// sensor ids for data from the 1st and 2nd users
+	int h1_1, h1_2, h2_1, h2_2;
+	int b1_1, b1_2, b2_1, b2_2;
+
 	enum ThreadStates { notInit = -1,ready = 0, startReadingFiles, readingFiles, filesReady, endThread };
 	std::atomic<ThreadStates> threadState;
 
 	void createFileThread();
 	void mainFileMngrThread();
+
+	/*****************************************************************************
+	*
+	Callback handlers
+	*
+	*****************************************************************************/
+
+	friend static void VRPN_CALLBACK handle_console_commands(void *userdata, const vrpn_TEXTCB t);
+	friend static void VRPN_CALLBACK handle_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_cars(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_file_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_file_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_file_cars(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_file_msgs(void *userdata, const vrpn_TEXTCB t);
+
+
 };
 
-
-/*****************************************************************************
-*
-Callback handlers
-*
-*****************************************************************************/
-
-void VRPN_CALLBACK handle_console_commands(void *userdata, const vrpn_TEXTCB t);
-void VRPN_CALLBACK handle_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_cars(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_file_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_file_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_file_cars(void *userdata, const vrpn_TRACKERCB t);
-void VRPN_CALLBACK handle_file_msgs(void *userdata, const vrpn_TEXTCB t);
 
 
 #endif
