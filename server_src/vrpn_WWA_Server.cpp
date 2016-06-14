@@ -154,20 +154,29 @@ void vrpn_WWA_Server::mainloop()
 	if (carReader != NULL)
 		carReader->mainloop();
 
-	// readers from file
-	if (fileHeadTrackerReader != NULL)
+	// readers from file. Be sure they are ready to be read
+	if (fileHeadTrackerReader != NULL && threadState == ready)
 		fileHeadTrackerReader->mainloop();
-	if (fileBodyTrackerReader != NULL)
+	if (fileBodyTrackerReader != NULL && threadState == ready)
 		fileBodyTrackerReader->mainloop();
-	if (fileCarReader != NULL)
+	if (fileCarReader != NULL && threadState == ready)
 		fileCarReader->mainloop();
-	if (fileMsgReader != NULL)
+	if (fileMsgReader != NULL && threadState == ready)
 		fileMsgReader->mainloop();
 
 	if (carsServer != NULL)
 		carsServer->mainloop();
 
 	vrpn_Text_Sender::mainloop(); // msgs
+
+	// Extra processing for server states
+	switch (threadState)
+	{
+	case errorReadingFiles:
+	case filesReady:
+		threadState = ready;
+		break;
+	}
 }
 
 void vrpn_WWA_Server::createFileThread()
@@ -210,6 +219,13 @@ void vrpn_WWA_Server::mainFileMngrThread()
 			devName += fileToLoad;
 			printf("WWAServer. Connection to [%s] requested\n", devName.c_str());
 			fileHeadTrackerReader = new vrpn_Tracker_Remote(devName.c_str());
+			if (fileHeadTrackerReader == NULL)
+			{
+				// assuming error while creating the file...
+				fprintf(stderr, "WWAServer Error: can't create this client [%s]\n", devName.c_str());
+				threadState = errorReadingFiles;
+				break;
+			}
 			fileHeadTrackerReader->register_change_handler(this, handle_file_heads_pos_quat);
 
 			devName = bodyDevName;
@@ -217,6 +233,13 @@ void vrpn_WWA_Server::mainFileMngrThread()
 			devName += fileToLoad;
 			printf("WWAServer. Connection to [%s] requested\n", devName.c_str());
 			fileBodyTrackerReader = new vrpn_Tracker_Remote(devName.c_str());
+			if (fileBodyTrackerReader == NULL)
+			{
+				// assuming error while creating the file...
+				fprintf(stderr, "WWAServer Error: can't create this client [%s]\n", devName.c_str());
+				threadState = errorReadingFiles;
+				break;
+			}
 			fileBodyTrackerReader->register_change_handler(this, handle_file_body_pos_quat);
 
 			devName = carsDevName;
@@ -224,6 +247,13 @@ void vrpn_WWA_Server::mainFileMngrThread()
 			devName += fileToLoad;
 			printf("WWAServer. Connection to [%s] requested\n", devName.c_str());
 			fileCarReader = new vrpn_Tracker_Remote(devName.c_str());
+			if (fileCarReader == NULL)
+			{
+				// assuming error while creating the file...
+				fprintf(stderr, "WWAServer Error: can't create this client [%s]\n", devName.c_str());
+				threadState = errorReadingFiles;
+				break;
+			}
 			fileCarReader->register_change_handler(this, handle_file_cars);
 
 			devName = msgDevName;
@@ -231,17 +261,24 @@ void vrpn_WWA_Server::mainFileMngrThread()
 			devName += fileToLoad;
 			printf("WWAServer. Connection to [%s] requested\n", devName.c_str());
 			fileMsgReader = new vrpn_Text_Receiver(devName.c_str());
+			if (fileMsgReader == NULL)
+			{
+				// assuming error while creating the file...
+				fprintf(stderr, "WWAServer Error: can't create this client [%s]\n", devName.c_str());
+				threadState = errorReadingFiles;
+				break;
+			}
 			fileMsgReader->register_message_handler(this, handle_file_msgs);
 
-			con = fileHeadTrackerReader->connectionPtr();
+			con = fileBodyTrackerReader->connectionPtr();
 			fcn_fileReader = con->get_File_Connection();
 			if (fcn_fileReader == NULL)
 			{
 				fprintf(stderr, "WWAServer Error: Error establishing connection with [%s]\n", devName.c_str());
-				threadState = ready;
+				threadState = errorReadingFiles;
 				break;
 			}
-			fcn_fileReader->set_replay_rate(0.0); // pause the files
+			fcn_fileReader->set_replay_rate(1.0); // start playing
 			fcn_fileReader->reset();
 
 			threadState = filesReady;
@@ -249,8 +286,6 @@ void vrpn_WWA_Server::mainFileMngrThread()
 		case readingFiles:
 			fprintf(stderr, "WWAServer Error: Very weird state [readingFiles]. Check File Manager.\n");
 			threadState = endThread;
-			break;
-		case filesReady:
 			break;
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -274,11 +309,52 @@ void vrpn_WWA_Server::loadFile(const char* filename)
 	case readingFiles:
 		fprintf(stderr,"WWAServer Error: Can't process a new file load for [%s]. Still working on the previous one [%s]\n", filename, fileToLoad.c_str());
 		break;
-	case filesReady:
-		fprintf(stderr, "WWAServer Error: Can't process a new file load for [%s]. Still working on the previous one [%s]\n", filename, fileToLoad.c_str());
-		break;
 	}
 }
+
+void vrpn_WWA_Server::replayFile()
+{
+	if (fcn_fileReader != NULL)
+	{
+		fcn_fileReader->set_replay_rate(1.0); // start playing
+		fcn_fileReader->reset();
+	}
+	else
+	{
+		fprintf(stderr, "WWAServer Error: Can't replay. File handler not available\n" );
+	}
+}
+
+void vrpn_WWA_Server::pauseFile()
+{
+	if (fcn_fileReader != NULL)
+	{
+		fcn_fileReader->set_replay_rate(0.0); // pause
+	}
+	else
+	{
+		fprintf(stderr, "WWAServer Error: Can't pause. File handler not available\n");
+	}
+}
+
+void vrpn_WWA_Server::resumeFile()
+{
+	if (fcn_fileReader != NULL)
+	{
+		fcn_fileReader->set_replay_rate(1.0); // resume
+	}
+	else
+	{
+		fprintf(stderr, "WWAServer Error: Can't continue. File handler not available\n");
+	}
+}
+
+void vrpn_WWA_Server::realData()
+{
+	u1FromFile = false;
+	u2FromFile = false;
+}
+
 
 /*****************************************************************************
 *
@@ -292,26 +368,30 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 	vrpn_WWA_Server *obj = static_cast<vrpn_WWA_Server *>(userdata);
 
 	const char* command = t.message;
+	char fname[100];
 	char p1[20], p2[20];
+	fname[0] = '\0';
 	p1[0] = '\0';
 	p2[0] = '\0';
 
 	fprintf(stderr,"WWAServer Receiving command: %s\n", command);
 
-	if (strncmp(command, "LOAD ", 5) == 0)
+	if (!obj->isReadyForCommands())
 	{
-		command += 5; // now command sees the file name
-		std::string filename = obj->getExpDir();
-		filename += "\\";
-		filename += command;
-		printf("WWAServer. LOAD file: %s\n", filename.c_str());
-		// start the process of connecting a file
-		obj->loadFile(filename.c_str());
+		fprintf(stderr, "WWAServer is processing another command. Wait a while\n" );
+		return;
 	}
-	else if (strncmp(command, "PLAY ", 5) == 0)
+
+	if (strncmp(command, "LOAD", 4) == 0)
 	{
+		// reset
+		obj->realData();
+
+		// LOAD filename U1 | U2
 		command += 5; // now command sees parameters
-		int params = sscanf(command, "%s %s", p1, p2);
+
+		int params = sscanf(command, "%s %s %s", fname, p1, p2);
+
 		if (strncmp(p1, "U1", 2) == 0)
 		{
 			obj->u1FromFile = true;
@@ -320,7 +400,7 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 		{
 			obj->u2FromFile = true;
 		}
-		if (params == 2)
+		if (params == 3)
 		{
 			if (strncmp(p2, "U1", 2) == 0)
 			{
@@ -331,6 +411,30 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 				obj->u2FromFile = true;
 			}
 		}
+
+		// everything ready to start reading from the file
+		std::string filename = obj->getExpDir();
+		filename += "\\";
+		filename += fname;
+		printf("WWAServer. LOAD file: %s\n", filename.c_str());
+		// start the process of connecting a file
+		obj->loadFile(filename.c_str());
+	}
+	else if (strncmp(command, "REPLAY", 6) == 0)
+	{
+		obj->replayFile();
+	}
+	else if (strncmp(command, "PAUSE", 5) == 0)
+	{
+		obj->pauseFile();
+	}
+	else if (strncmp(command, "CONTINUE", 7) == 0)
+	{
+		obj->resumeFile();
+	}
+	else if (strncmp(command, "REAL_DATA", 9) == 0)
+	{
+		obj->realData();
 	}
 	/*
 	// Warnings and errors are printed by the system text printer.

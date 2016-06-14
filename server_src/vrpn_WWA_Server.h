@@ -32,6 +32,10 @@ public:
 	const std::string& getExpDir() { return expDir; }
 
 	void loadFile(const char* filename);
+	void replayFile();
+	void pauseFile();
+	void resumeFile();
+	void realData();
 
 	/// Handlers
 	static int VRPN_CALLBACK
@@ -76,8 +80,10 @@ private:
 	int h1_1, h1_2, h2_1, h2_2;
 	int b1_1, b1_2, b2_1, b2_2;
 
-	enum ThreadStates { notInit = -1,ready = 0, startReadingFiles, readingFiles, filesReady, endThread };
+	enum ThreadStates { notInit = -1,ready = 0, startReadingFiles, readingFiles, filesReady, errorReadingFiles, endThread };
 	std::atomic<ThreadStates> threadState;
+
+	bool isReadyForCommands() { return (threadState==ready || threadState == notInit); }
 
 	void createFileThread();
 	void mainFileMngrThread();
