@@ -3,7 +3,10 @@
 
 #include <chrono>
 
-vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, 
+FILE* debugFile = NULL;
+
+vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tGoMsgInSecs,
+	const char *consoleDeviceTxt, const char *p1DeviceTxt, const char *p2DeviceTxt,
 	const char *nameHeadsTrk, int nH, int h11, int h12, int h21, int h22,
 	const char *nameBodiesTrk, int nB, int b11, int b12, int b21, int b22,
 	const char *nameCars, const char *expDirectory): vrpn_Text_Sender(nameTxt, c)
@@ -12,6 +15,11 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const 
 	printf("%s\n", __PRETTY_FUNCTION__);
 #endif
 
+	if (debugFile == NULL)
+	{
+		debugFile = fopen("C:\\Users\\pfigueroa\\Desktop\\GIT\\vrpn-PerceptionNeuron\\pc_win32\\server_src\\vrpn_server\\Debug\\debugFile.txt", "a");
+	}
+
 	headDevName = nameHeadsTrk;
 	bodyDevName = nameBodiesTrk;
 	carsDevName = nameCars;
@@ -19,6 +27,7 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const 
 	hasRealTrackers = false;
 	nHeadSensors = nH;
 	nBodySensors = nB;
+	timeoutGoMsgInSecs = tGoMsgInSecs;
 
 	h1_1 = h11; h1_2 = h12, h2_1 = h21, h2_2 = h22;
 	b1_1 = b11; b1_2 = b12, b2_1 = b21, b2_2 = b22;
@@ -29,6 +38,17 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const 
 	// Create internal devices and clients
 	console = new vrpn_Text_Receiver(consoleDeviceTxt);
 	console->register_message_handler(this, handle_console_commands);
+
+	if (strncmp(p1DeviceTxt, "NoDevice", 8) != 0)
+	{
+		p1 = new vrpn_Text_Receiver(consoleDeviceTxt);
+		p1->register_message_handler(this, handle_console_commands);
+	}
+	if (strncmp(p2DeviceTxt, "NoDevice", 8) != 0)
+	{
+		p2 = new vrpn_Text_Receiver(consoleDeviceTxt);
+		p2->register_message_handler(this, handle_console_commands);
+	}
 
 	headTracker = new vrpn_Tracker_Server(nameHeadsTrk,c,nH);
 	bodiesTracker = new vrpn_Tracker_Server(nameBodiesTrk, c, nB);
@@ -62,13 +82,17 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const 
 	threadState = notInit;
 	fileMngrThread = NULL;
 
+	serverState = idle;
+	okTrialP1 = okTrialP2 = okTrialCS = false;
+	endTrialP1 = endTrialP2 = endTrialCS = false;
 }
 
-vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, 
+vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tGoMsgInSecs,
+	const char *consoleDeviceTxt, const char *p1DeviceTxt, const char *p2DeviceTxt,
 	const char *nameHeadsTrk, int nH, int h1_1, int h1_2, int h2_1, int h2_2, 
 	const char *nameBodiesTrk, int nB, int b1_1, int b1_2, int b2_1, int b2_2,
 	const char *nameCars, const char *expDirectory, const char *headsDeviceTrk, const char *bodiesDeviceTrk, const char *carsDevice): 
-	vrpn_WWA_Server(c, nameTxt, consoleDeviceTxt, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2, 
+	vrpn_WWA_Server(c, nameTxt, tGoMsgInSecs, consoleDeviceTxt, p1DeviceTxt, p2DeviceTxt, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2,
 		nameBodiesTrk, nB, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory)
 {
 #ifdef DEBUG
@@ -94,8 +118,8 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const 
 		carReader->register_change_handler(this, handle_cars);
 	}
 
-	printf("WWAServer. Creating WWA_Server with parameters: %s %s %s %d %d %d %d %d %s %d %d %d %d %d %s %s %s %s %s\n", nameTxt,
-		consoleDeviceTxt, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2, 
+	printf("WWAServer. Creating WWA_Server with parameters: %s %s %d %s %d %d %d %d %d %s %d %d %d %d %d %s %s %s %s %s\n", 
+		nameTxt, consoleDeviceTxt, tGoMsgInSecs, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2,
 		nameBodiesTrk, nB, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice );
 }
 
@@ -105,6 +129,12 @@ vrpn_WWA_Server::~vrpn_WWA_Server()
 #ifdef DEBUG
 	printf("%s\n", __PRETTY_FUNCTION__);
 #endif
+
+	fflush(debugFile);
+	fclose(debugFile);
+
+	fprintf(stderr, "WWAServer destroying...\n");
+
 	threadState = endThread;
 	/*
 	if(fileMngrThread->joinable())
@@ -169,7 +199,7 @@ void vrpn_WWA_Server::mainloop()
 
 	vrpn_Text_Sender::mainloop(); // msgs
 
-	// Extra processing for server states
+	// Extra processing for server's thread states
 	switch (threadState)
 	{
 	case errorReadingFiles:
@@ -177,7 +207,55 @@ void vrpn_WWA_Server::mainloop()
 		threadState = ready;
 		break;
 	}
+
+	// extra processing for other commands
+	if (isReadyForCommands())
+	{
+		switch (serverState)
+		{
+		case idle:
+			break;
+		case waitingOkTrial: 
+			if (okTrialP1 && okTrialP2 && okTrialCS)
+			{
+				send_message("UNBLACK SV");
+				startGo = std::chrono::system_clock::now();
+				okTrialP1 = okTrialP2 = okTrialCS = false;
+				serverState = waitingGoTrial;
+			}
+			break;
+		case waitingGoTrial:
+			endGo = std::chrono::system_clock::now();
+			auto delta = std::chrono::duration<float>(endGo - startGo);
+			if (std::chrono::duration_cast<std::chrono::seconds>(delta).count() >= timeoutGoMsgInSecs)
+			{
+				send_message("GO SV");
+				serverState = waitingEndTrial;
+			}
+			break;
+		case waitingEndTrial:
+			if (endTrialP1 && endTrialP2 && endTrialCS)
+			{
+				send_message("ENDTRIAL SV");
+				endTrialP1 = endTrialP2 = endTrialCS = false;
+				serverState = idle;
+			}
+			break;
+		}
+	}
 }
+
+/*
+// Create a call object that prints characters that it receives
+// to the console.
+call<wchar_t> print_character([](wchar_t c) {
+wcout << c;
+});
+
+// Create a timer object that sends the period (.) character to
+// the call object every 100 milliseconds.
+timer<wchar_t> progress_timer(100u, L'.', &print_character, true);
+*/
 
 void vrpn_WWA_Server::createFileThread()
 {
@@ -355,12 +433,72 @@ void vrpn_WWA_Server::realData()
 	u2FromFile = false;
 }
 
+void vrpn_WWA_Server::startTrial(const char* origin, int trialId)
+{
+	// To Do: seek to a particular place!
+	serverState = waitingOkTrial;
+	fprintf(stderr, "WWAServer start trial processed: %s %d\n", origin, trialId);
+	fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "startTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
+
+}
+
+void vrpn_WWA_Server::okTrial(const char* origin, int trialId)
+{
+	// assuming trial id is correct
+	if (strncmp(origin, "P1", 2) == 0)
+	{
+		okTrialP1 = true;
+	}
+	else if (strncmp(origin, "P2", 2) == 0)
+	{
+		okTrialP2 = true;
+	}
+	else if (strncmp(origin, "CS", 2) == 0)
+	{
+		okTrialCS = true;
+	}
+
+	fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "okTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
+}
+
+void vrpn_WWA_Server::endTrial(const char* origin, int trialId)
+{
+	// assuming trial id is correct
+	if (strncmp(origin, "P1", 2) == 0)
+	{
+		endTrialP1 = true;
+	}
+	else if (strncmp(origin, "P2", 2) == 0)
+	{
+		endTrialP2 = true;
+	}
+	else if (strncmp(origin, "CS", 2) == 0)
+	{
+		endTrialCS = true;
+	}
+}
+
 
 /*****************************************************************************
 *
 Callback handlers
 *
 *****************************************************************************/
+
+
+/* General Commands:
+	LOAD filename <U1 | U2 | U1 U2>
+	REPLAY
+	PAUSE
+	CONTINUE
+	REAL_DATA
+
+	Received from clients, due to protocol (it may generate others):
+	BLACKSCR <P1 | P2>
+	TRIAL CS id
+	OKTRIAL <CS | P1 | P2> id (it generates UNBLACK SV and GO SV after a while)
+	ENDTRIAL <P1 | P2> id
+*/
 
 void VRPN_CALLBACK 
 handle_console_commands(void *userdata, const vrpn_TEXTCB t)
@@ -369,7 +507,8 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 
 	const char* command = t.message;
 	char fname[100];
-	char p1[20], p2[20];
+	char p1[20], p2[20], p3[20];
+	int var1=-1;
 	fname[0] = '\0';
 	p1[0] = '\0';
 	p2[0] = '\0';
@@ -382,6 +521,8 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 		return;
 	}
 
+	// Message handling
+	// Most messages in the protocol are broadcasted, unless they have as origin SV... to be safg
 	if (strncmp(command, "LOAD", 4) == 0)
 	{
 		// reset
@@ -436,12 +577,58 @@ handle_console_commands(void *userdata, const vrpn_TEXTCB t)
 	{
 		obj->realData();
 	}
-	/*
-	// Warnings and errors are printed by the system text printer.
-	if (t.type == vrpn_TEXT_NORMAL) {
-		printf("%s: Text message: %s\n", name, t.message);
+	else if (strncmp(command, "BLACKSCR", 8) == 0)
+	{
+		command += 9;
+		int params = sscanf(command, "%s", p1);
+
+		// Assuming it is well formed and not originated at SV
+		if (strncmp(p1, "SV", 2) != 0)
+		{
+			command -= 9;
+			obj->send_message(command);
+		}
 	}
-	*/
+	else if (strncmp(command, "TRIAL", 5) == 0)
+	{
+		command += 6;
+		int params = sscanf(command, "%s %d", p1, &var1);
+		obj->startTrial(p1, var1);
+
+		// Assuming it is well formed and not originated at SV
+		if (strncmp(p1, "SV", 2) != 0)
+		{
+			command -= 6;
+			obj->send_message(command);
+		}
+	}
+	else if (strncmp(command, "OKTRIAL", 7) == 0)
+	{
+		command += 8;
+		int params = sscanf(command, "%s %d", p1, &var1);
+		obj->okTrial(p1, var1);
+
+		// Assuming it is well formed and not originated at SV
+		if (strncmp(p1, "SV", 2) != 0)
+		{
+			command -= 8;
+			obj->send_message(command);
+		}
+	}
+	else if (strncmp(command, "ENDTRIAL", 8) == 0)
+	{
+		command += 9;
+		int params = sscanf(command, "%s %d", p1, &var1);
+		obj->endTrial(p1, var1);
+
+		// Assuming it is well formed and not originated at SV
+		if (strncmp(p1, "SV", 2) != 0)
+		{
+			command -= 9;
+			obj->send_message(command);
+		}
+	}
+	// ignore other messages... specially the "No response" message that repeats itself so much... :)
 }
 
 

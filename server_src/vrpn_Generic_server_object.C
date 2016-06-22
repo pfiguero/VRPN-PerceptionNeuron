@@ -3581,6 +3581,8 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 
 	char nameTxt[LINESIZE];
 	char consoleDeviceTxt[LINESIZE];
+	char p1DeviceTxt[LINESIZE];
+	char p2DeviceTxt[LINESIZE];
 	char nameHeadsTrk[LINESIZE];
 	char nameBodiesTrk[LINESIZE];
 	char nameCars[LINESIZE];
@@ -3594,12 +3596,14 @@ int vrpn_Generic_Server_Object::setup_WWA_Server(char *&pch, char *line,
 	int nSHeads, nSBodies;
 	int h1_1, h1_2, h2_1, h2_2;
 	int b1_1, b1_2, b2_1, b2_2;
+	int timeoutGoMsgInSecs;
 
 	nameTxt[0] = consoleDeviceTxt[0] = nameHeadsTrk[0] = nameBodiesTrk[0] = nameCars[0] =
 		expDirectory[0] = headsDeviceTrk[0] = bodiesDeviceTrk[0] = carsDevice[0] = '\0';
 	// get the several lines for configuration, until end_vrpn_WWA_Server
 /*
-vrpn_WWA_Server WWAMsgs Console@localhost:3885
+vrpn_WWA_Server WWAMsgs 5
+Console@localhost:3885 NoDevice@localhost:3885 NoDevice@localhost:3885
 Heads 2 sensors1 0 5 sensors2 6 12
 Bodies 120 sensors1 0 59 sensors2 60 119
 Cars
@@ -3608,17 +3612,17 @@ TrackerP@localhost Tracker0@localhost CarGenerator@localhost (or -notrackers)
 end_vrpn_WWA_Server
 */
 
-	if (sscanf(line, "vrpn_WWA_Server %s %s", nameTxt, consoleDeviceTxt) <2) {
+	if (sscanf(line, "vrpn_WWA_Server %s %d", nameTxt, &timeoutGoMsgInSecs) <2) {
 		errorInLine = true;
 	}
 	
-	enum { inHead, inBodies, inCars, inExpDir, inTrackers, endLine } curLine;
-	curLine = inHead;
+	enum { inClients, inHead, inBodies, inCars, inExpDir, inTrackers, endLine } curLine;
+	curLine = inClients;
 
 	// read file for the WWA configuration
 	// Parse all up to just "end_vrpn_WWA_Server" to consume their
 	// place in the input stream.
-	while (fgets(line, LINESIZE, config_file) != NULL) {
+	while (fgets(line, LINESIZE, config_file) != NULL && !errorInLine) {
 
 		// cut off comments
 		for (int i = 0; i < LINESIZE && line[i] != '\0'; i++) {
@@ -3630,13 +3634,20 @@ end_vrpn_WWA_Server
 
 		sscanf(line, "%s", firstToken);
 		line += strlen(firstToken) +1;
-		if (strcmp(firstToken, "end_vrpn_WWA_Server") == 0)
+		if (strncmp(firstToken, "end_vrpn_WWA_Server",19) == 0)
 		{
 			break;
 		}
 
 		switch (curLine)
 		{
+		case inClients:
+			strcpy(consoleDeviceTxt, firstToken);
+			if (sscanf(line, "%s %s", p1DeviceTxt, p2DeviceTxt) < 2) {
+				errorInLine = true;
+			}
+			curLine = inHead;
+			break;
 		case inHead:
 			strcpy(nameHeadsTrk, firstToken);
 			if (sscanf(line, "%d sensors1 %d %d sensors2 %d %d", &nSHeads, &h1_1, &h1_2, &h2_1, &h2_2) < 5) {
@@ -3682,27 +3693,29 @@ end_vrpn_WWA_Server
 		
 	if (errorInLine)
 	{
-		fprintf(stderr, "Bad vrpn_WWA_Server line: %s\nProper format is: "
-			"vrpn_WWA_Server <txtName> <consoleDevice> \n"
+		line -= strlen(firstToken) + 1;
+		fprintf(stderr, "Bad vrpn_WWA_Server line: [%s] (Curline [%d])\nProper format is: \n"
+			"vrpn_WWA_Server <txtName> <timeoutGoMsgInSecs>\n"
+			"<consoleDevice> <p1Device> <p2Device>\n"
 			"<nameHeadsTrk> <numSensorsHead> sensors1 <head1Sensor1> <head1Sensor2> sensors2 <head2Sensor1> <head2Sensor2> \n"
 			"<nameBodiesTrk> <numSensorsBodies> sensors1 <body1Sensor1> <body1SensorLast> sensors2 <body2Sensor1> <body2SensorLast> \n"
 			"<nameCars>\n"
 			"<expDirectory>\n"
 			"(-notrackers | <headsDeviceTrk>, <bodiesDeviceTrk>, <carsDevice>) \n" 
 			"end_vrpn_WWA_Server\n",
-			line);
+			line,curLine);
 		return -1;
 	}
 
 	vrpn_WWA_Server *wwa;
 	if(!hasRealTrackers)
 	{
-		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2, 
+		wwa = new vrpn_WWA_Server(connection, nameTxt, timeoutGoMsgInSecs, consoleDeviceTxt, p1DeviceTxt, p2DeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2,
 			nameBodiesTrk, nSBodies, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory);
 	}
 	else
 	{
-		wwa = new vrpn_WWA_Server(connection, nameTxt, consoleDeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2, 
+		wwa = new vrpn_WWA_Server(connection, nameTxt, timeoutGoMsgInSecs, consoleDeviceTxt, p1DeviceTxt, p2DeviceTxt, nameHeadsTrk, nSHeads, h1_1, h1_2, h2_1, h2_2,
 			nameBodiesTrk, nSBodies, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice);
 	}
 	/*

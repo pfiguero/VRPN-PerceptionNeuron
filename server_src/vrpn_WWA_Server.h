@@ -15,11 +15,15 @@
 
 class VRPN_API vrpn_WWA_Server : public vrpn_Text_Sender {
 public:
-	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, 
+	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tGoMsgInSecs,
+		const char *consoleDeviceTxt, const char *p1DeviceTxt, const char *p2DeviceTxt,
+		const char *nameHeadsTrk, int nH,
 		int h1_1, int h1_2, int h2_1, int h2_2, const char *nameBodiesTrk, int nB, int b1_1, int b1_2, int b2_1, int b2_2,
 		const char *nameCars, const char *expDirectory);
 
-	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, const char *consoleDeviceTxt, const char *nameHeadsTrk, int nH, 
+	vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tGoMsgInSecs,
+		const char *consoleDeviceTxt, const char *p1DeviceTxt, const char *p2DeviceTxt,
+		const char *nameHeadsTrk, int nH,
 		int h1_1, int h1_2, int h2_1, int h2_2, const char *nameBodiesTrk, int nB, int b1_1, int b1_2, int b2_1, int b2_2,
 		const char *nameCars, const char *expDirectory, const char *headsDeviceTrk, const char *bodiesDeviceTrk, const char *carsDevice);
 
@@ -36,6 +40,9 @@ public:
 	void pauseFile();
 	void resumeFile();
 	void realData();
+	void startTrial(const char* origin, int trialId);
+	void okTrial(const char* origin, int trialId);
+	void endTrial(const char* origin, int trialId);
 
 	/// Handlers
 	static int VRPN_CALLBACK
@@ -48,6 +55,8 @@ public:
 		handle_dropped_last_connection_message(void *userdata, vrpn_HANDLERPARAM p);
 private:
 	vrpn_Text_Receiver* console;
+	vrpn_Text_Receiver* p1;
+	vrpn_Text_Receiver* p2;
 	vrpn_Tracker_Server* headTracker;
 	int nHeadSensors;
 	vrpn_Tracker_Server* bodiesTracker;
@@ -82,6 +91,16 @@ private:
 
 	enum ThreadStates { notInit = -1,ready = 0, startReadingFiles, readingFiles, filesReady, errorReadingFiles, endThread };
 	std::atomic<ThreadStates> threadState;
+
+	// Inside ThreadStates::ready, these are states for the server's tasks
+	enum ServerStates { idle=0, waitingOkTrial, waitingGoTrial, waitingEndTrial };
+	ServerStates serverState;
+
+	// variables for the waitingOkTrial state
+	bool okTrialP1, okTrialP2, okTrialCS;
+	std::chrono::time_point<std::chrono::system_clock> startGo, endGo;
+	bool endTrialP1, endTrialP2, endTrialCS;
+	int timeoutGoMsgInSecs;
 
 	bool isReadyForCommands() { return (threadState==ready || threadState == notInit); }
 

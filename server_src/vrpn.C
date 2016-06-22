@@ -14,6 +14,12 @@ void Usage(const char *s)
     fprintf(stderr, "Usage: %s [-f filename] [-warn] [-v] [port] [-q]\n", s);
     fprintf(stderr, "       [-millisleep n]\n");
     fprintf(stderr, "       [-NIC name] [-li filename] [-lo filename]\n");
+#ifdef VRPN_WWA_SERVER
+	fprintf(stderr, "       -id idExperiment\n");
+	fprintf(stderr, "       -fid LOW | HIGH\n");
+	fprintf(stderr, "       -gen MALE | FEMALE\n");
+	fprintf(stderr, "       -co LIVE | REC \n");
+#endif
     fprintf(stderr,
             "       -f: Full path to config file (default vrpn.cfg).\n");
     fprintf(stderr,
@@ -56,6 +62,16 @@ static char *g_NICname = NULL;
 
 static const char *g_inLogName = NULL;
 static const char *g_outLogName = NULL;
+
+
+#ifdef VRPN_WWA_SERVER
+static const char *wwa_exp_id = NULL;
+static const char *wwa_exp_fid = NULL;
+static const char *wwa_exp_genre = NULL;
+static const char *wwa_exp_conf = NULL;
+static char inFileName[vrpn_MAX_TEXT_LEN];
+static char outFileName[vrpn_MAX_TEXT_LEN];
+#endif
 
 // TCH October 1998
 // Use Forwarder as remote-controlled multiple connections.
@@ -128,6 +144,16 @@ BOOL WINAPI handleConsoleSignalsWin(DWORD signaltype)
 
 void sighandler(int) { done = 1; }
 #endif
+
+inline bool isNumber(const char* str)
+{
+	char* p; 
+	long c = strtol(str, &p, 10); 
+	if (*p) 
+		return false; 
+	else 
+		return true;
+}
 
 int main(int argc, char *argv[])
 {
@@ -232,7 +258,45 @@ int main(int argc, char *argv[])
         else if (!strcmp(argv[i], "-flush")) {
             flush_continuously = true;
         }
-        else if (argv[i][0] == '-') { // Unknown flag
+#ifdef VRPN_WWA_SERVER
+		else if (!strcmp(argv[i], "-id")) { // experiment identifier
+			if (++i > argc) {
+				Usage(argv[0]);
+			}
+			if (verbose) {
+				fprintf(stderr, "Experiment identifier %s.\n", argv[i]);
+			}
+			wwa_exp_id = argv[i];
+		}
+		else if (!strcmp(argv[i], "-fid")) { // Fidelity
+			if (++i > argc) {
+				Usage(argv[0]);
+			}
+			if (verbose) {
+				fprintf(stderr, "Fidelity %s.\n", argv[i]);
+			}
+			wwa_exp_fid = argv[i];
+		}
+		else if (!strcmp(argv[i], "-gen")) { // Genre
+			if (++i > argc) {
+				Usage(argv[0]);
+			}
+			if (verbose) {
+				fprintf(stderr, "Genre %s.\n", argv[i]);
+			}
+			wwa_exp_genre = argv[i];
+		}
+		else if (!strcmp(argv[i], "-co")) { // Confederate's origin
+			if (++i > argc) {
+				Usage(argv[0]);
+			}
+			if (verbose) {
+				fprintf(stderr, "Confederate's origin %s.\n", argv[i]);
+			}
+			wwa_exp_conf = argv[i];
+		}
+#endif
+		else if (argv[i][0] == '-') { // Unknown flag
             Usage(argv[0]);
         }
         else
@@ -246,6 +310,36 @@ int main(int argc, char *argv[])
             }
         i++;
     }
+
+#ifdef VRPN_WWA_SERVER
+	if (wwa_exp_id == NULL || wwa_exp_fid == NULL || wwa_exp_genre == NULL || wwa_exp_conf == NULL)
+	{
+		Usage("WWAServer: parameter not defined: id, fid, gen, or co\n Parameters: ");
+	}
+	if (wwa_exp_id != NULL && !(isNumber(wwa_exp_id)))
+	{
+		Usage("WWAServer: Experiment's id should be a number\n Parameters: ");
+	}
+	if (wwa_exp_fid != NULL && !(strcmp(wwa_exp_fid,"LOW")==0 || strcmp(wwa_exp_fid, "HIGH") == 0))
+	{
+		Usage("WWAServer: Experiment's fidelity should be LOW or HIGH\n Parameters: ");
+	}
+	if (wwa_exp_genre != NULL && !(strcmp(wwa_exp_genre, "MALE") == 0 || strcmp(wwa_exp_genre, "FEMALE") == 0))
+	{
+		Usage("WWAServer: Experiment's genre should be MALE or FEMALE\n Parameters: ");
+	}
+	if (wwa_exp_conf != NULL && !(strcmp(wwa_exp_conf, "LIVE") == 0 || strcmp(wwa_exp_conf, "REC") == 0))
+	{
+		Usage("WWAServer: Experiment's confederate should be LIVE or REC\n Parameters: ");
+	}
+
+	// override names for files
+	sprintf(inFileName, "wwa_in_%s.bin", wwa_exp_id);
+	g_inLogName = inFileName;
+	sprintf(outFileName, "wwa_out_%s.bin", wwa_exp_id);
+	g_outLogName = outFileName;
+
+#endif
 
     // Need to have a global pointer to the connection so we can shut it down
     // in the signal handler (so we can close any open logfiles.)
