@@ -425,6 +425,12 @@
 // Added by Evan A.Suma
 //#define VRPN_USE_PORTS_TXT
 
+
+//------------------------
+//Compile MxR Traffic Generator
+// Added by Timofey Grechkin
+#define VRPN_INCLUDE_MXR_TRAFFIC_GENERATOR
+
 //------------------------
 // Instructs VRPN to compile code for the WWA_server demo
 // Added by Pablo Figueroa

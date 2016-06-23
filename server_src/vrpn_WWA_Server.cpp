@@ -12,7 +12,7 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tG
 	const char *nameCars, const char *expDirectory): vrpn_Text_Sender(nameTxt, c)
 {
 #ifdef DEBUG
-	printf("%s\n", __PRETTY_FUNCTION__);
+	printf("%s\nheadTrackerReader, __PRETTY_FUNCTION__);
 #endif
 
 	if (debugFile == NULL)
@@ -118,8 +118,8 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tG
 		carReader->register_change_handler(this, handle_cars);
 	}
 
-	printf("WWAServer. Creating WWA_Server with parameters: %s %s %d %s %d %d %d %d %d %s %d %d %d %d %d %s %s %s %s %s\n", 
-		nameTxt, consoleDeviceTxt, tGoMsgInSecs, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2,
+	printf("WWAServer. Creating WWA_Server with parameters: %s %d %s %s %s %s %d %d %d %d %d %s %d %d %d %d %d %s %s %s %s %s\n", 
+		nameTxt, tGoMsgInSecs, consoleDeviceTxt, p1DeviceTxt, p2DeviceTxt, nameHeadsTrk, nH, h1_1, h1_2, h2_1, h2_2,
 		nameBodiesTrk, nB, b1_1, b1_2, b2_1, b2_2, nameCars, expDirectory, headsDeviceTrk, bodiesDeviceTrk, carsDevice );
 }
 

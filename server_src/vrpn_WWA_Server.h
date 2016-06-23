@@ -9,6 +9,7 @@
 
 #include "vrpn_Shared.h"
 #include "vrpn_Tracker.h"
+#include "vrpn_MxRTrafficGenerator.h"
 #include <vrpn_Text.h> 
 
 #include "vrpn_MainloopContainer.h" // for vrpn_MainloopContainer

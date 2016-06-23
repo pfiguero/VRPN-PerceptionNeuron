@@ -105,6 +105,7 @@
 #include "vrpn_YEI_3Space.h" // for vrpn_YEI_3Space_Sensor, etc
 #include "vrpn_Zaber.h"      // for vrpn_Zaber
 
+#include "vrpn_MxRTrafficGenerator.h"
 #include "vrpn_WWA_Server.h"
 
 class VRPN_API vrpn_Connection;
@@ -3507,6 +3508,58 @@ int vrpn_Generic_Server_Object::setup_Tracker_PhaseSpace(char *&pch, char *line,
 #endif
 }
 
+int vrpn_Generic_Server_Object::setup_MxRTrafficGenerator_Server(char *&, char *line,
+	FILE *config_file)
+{
+	char deviceName[LINESIZE];
+	vrpn_float32 trafficZBound_Lower;
+	vrpn_float32 trafficZBound_Upper;
+	int trafficDirection = 1;
+	vrpn_float32 trafficSpeed;
+	vrpn_float32 carLen;
+	vrpn_float32 gapS;
+	vrpn_float32 gapM;
+	vrpn_float32 gapL;
+
+	// get tracker name and device
+	if (sscanf(line, "vrpn_MxRTrafficGenerator %s %f %f %d %f %f %f %f %f", deviceName,
+		&trafficZBound_Lower, &trafficZBound_Upper, &trafficDirection, &trafficSpeed,
+		&carLen, &gapS,& gapM, &gapL) < 9) {
+		fprintf(stderr, "Bad vrpn_MxRTrafficGenerator line: %s\nProper format "
+			"is:  vrpn_MxRTrafficGenerator [deviceName] [upperZBound] [lowerZBound] "
+			"[trafficDirection] [trafficSpeed] [carLength] [smallGapSize] [medGapSize] [largeGapSize]\n",
+			line);
+		return -1;
+	}
+
+	bool direction = false;
+	if (trafficDirection > 0)
+		direction = true;
+		
+
+#ifdef VRPN_INCLUDE_MXR_TRAFFIC_GENERATOR
+	vrpn_MxRTrafficGenerator *pstracker = new vrpn_MxRTrafficGenerator_Server(
+		deviceName, connection, trafficZBound_Lower, trafficZBound_Upper, direction, trafficSpeed,
+		carLen, gapS, gapM, gapL);
+
+	/*if (!pstracker->enableTracker(true)) {
+		fprintf(stderr, "Error, unable to enable Perception Neuron Tracker.\n");
+		delete pstracker;
+		return -1;
+	}*/
+	_devices->add(pstracker);
+
+	return 0;
+
+#else
+	fprintf(stderr, "vrpn_server: Can't open MxR Traffic Generator: "
+		"VRPN_INCLUDE_MXR_TRAFFIC_GENERATOR not defined in "
+		"vrpn_Configure.h!\n");
+	config_file = config_file + 1; // Unused parameter, avoid warning.
+	return -1;
+#endif
+}
+
 int vrpn_Generic_Server_Object::setup_Tracker_PerceptionNeuron(char *&, char *line,
 	FILE *config_file)
 {
@@ -5226,6 +5279,9 @@ vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
                 }
 				else if (VRPN_ISIT("vrpn_Tracker_PerceptionNeuron")) {
 					VRPN_CHECK(setup_Tracker_PerceptionNeuron);
+				}
+				else if (VRPN_ISIT("vrpn_MxRTrafficGenerator")) {
+					VRPN_CHECK(setup_MxRTrafficGenerator_Server);
 				}
                 else if (VRPN_ISIT("vrpn_Auxiliary_Logger_Server_Generic")) {
                     VRPN_CHECK(setup_Logger);

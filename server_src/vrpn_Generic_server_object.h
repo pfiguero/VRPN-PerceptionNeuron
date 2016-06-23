@@ -115,6 +115,7 @@ protected:
     int setup_Tracker_PhaseSpace(char *&pch, char *line,
                                  FILE * /*config_file*/);
 	int setup_Tracker_PerceptionNeuron(char *&, char *line, FILE *config_file);
+	int setup_MxRTrafficGenerator_Server(char *&, char *line, FILE *config_file);
 
     int setup_Tracker_NDI_Polaris(char *&pch, char *line, FILE *config_file);
     int setup_Logger(char *&pch, char *line, FILE * /*config_file*/);
