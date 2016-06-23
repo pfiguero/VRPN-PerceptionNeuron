@@ -14,7 +14,7 @@ vrpn_MxRTrafficGenerator_Remote *trafficRemote;
 void VRPN_CALLBACK handle_traffic_update(void*, const vrpn_MXRTRAFFIC_CALLBACK t)
 {
 	std::cout << "Received traffic update with N= " << t.car_count << " vehicles \n";
-	for (int i = 0; i < t.car_count; i++)
+	for (int i = 0; i < t.car_count; i++) 
 	{
 		std::cout<< "Car " << t.cars[i].ID << " in pos " << t.cars[i].pos_z <<"\n";
 	}

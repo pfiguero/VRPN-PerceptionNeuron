@@ -7,6 +7,8 @@
 const vrpn_int32 MBUFFER_SIZE = 1000;
 
 
+vrpn_MxRTrafficGenerator_Server *vrpn_MxRTrafficGenerator_Server::instance=NULL;
+
 
 
 vrpn_MxRTrafficGenerator::vrpn_MxRTrafficGenerator(const char *name, vrpn_Connection *c)
@@ -79,10 +81,14 @@ vrpn_MxRTrafficGenerator_Server::vrpn_MxRTrafficGenerator_Server(const char *nam
 	_traffic.init(trafficBoundSamallZ, trafficBoundLargeZ,
 		startingTrafficDirectionPositiveZ, trafficSpeed, carLen, gapS, gapM, gapL);
 	_update_rate = 60;
+
 	printf("vrpn_MxRTrafficGenerator_Server. Creating server with parameters: %s %f %f %s %f %f %f %f %f\n",
 		name, trafficBoundSamallZ, trafficBoundLargeZ,
 		startingTrafficDirectionPositiveZ? "true" : "false",
 		trafficSpeed,carLen, gapS, gapM, gapL);
+
+	if(instance == NULL)
+		instance = this;
 }
 
 void vrpn_MxRTrafficGenerator_Server::mainloop() {

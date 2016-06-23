@@ -115,12 +115,19 @@ public:
 	void startTrial();
 	void finishTrial();
 
+	static vrpn_MxRTrafficGenerator_Server* getInstance()
+	{
+		return instance;
+	}
+
 private:
 
 	vrpn_float64 _update_rate; //Update rate for traffic generation (reports/sec)
 	TrafficGenerator _traffic;
 
+	static vrpn_MxRTrafficGenerator_Server* instance;
 };
+
 
 
 //----------------------------------------------------------

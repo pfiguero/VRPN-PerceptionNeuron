@@ -440,6 +440,10 @@ void vrpn_WWA_Server::startTrial(const char* origin, int trialId)
 	fprintf(stderr, "WWAServer start trial processed: %s %d\n", origin, trialId);
 	fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "startTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
 
+	if (vrpn_MxRTrafficGenerator_Server::getInstance() != NULL)
+	{
+		vrpn_MxRTrafficGenerator_Server::getInstance()->startTrial();
+	}
 }
 
 void vrpn_WWA_Server::okTrial(const char* origin, int trialId)
@@ -476,6 +480,12 @@ void vrpn_WWA_Server::endTrial(const char* origin, int trialId)
 	{
 		endTrialCS = true;
 	}
+
+	if (vrpn_MxRTrafficGenerator_Server::getInstance() != NULL && endTrialP1 && endTrialP2 && endTrialCS)
+	{
+		vrpn_MxRTrafficGenerator_Server::getInstance()->finishTrial();
+	}
+
 }
 
 
