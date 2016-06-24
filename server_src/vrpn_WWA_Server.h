@@ -62,15 +62,15 @@ private:
 	int nHeadSensors;
 	vrpn_Tracker_Server* bodiesTracker;
 	int nBodySensors;
-	vrpn_Tracker_Server* carsServer;
+	vrpn_MxRTrafficGenerator_ProxyServer* carsServer;
 	std::string	expDir;
 	vrpn_Tracker_Remote* headTrackerReader;
 	vrpn_Tracker_Remote* bodyTrackerReader;
-	vrpn_Tracker_Remote* carReader;
+	vrpn_MxRTrafficGenerator_Remote* carReader;
 
 	vrpn_Tracker_Remote* fileHeadTrackerReader;
 	vrpn_Tracker_Remote* fileBodyTrackerReader;
-	vrpn_Tracker_Remote* fileCarReader;
+	vrpn_MxRTrafficGenerator_Remote* fileCarReader;
 	vrpn_Text_Receiver* fileMsgReader;
 	vrpn_File_Connection* fcn_fileReader;
 
@@ -117,10 +117,10 @@ private:
 	friend static void VRPN_CALLBACK handle_console_commands(void *userdata, const vrpn_TEXTCB t);
 	friend static void VRPN_CALLBACK handle_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
 	friend static void VRPN_CALLBACK handle_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-	friend static void VRPN_CALLBACK handle_cars(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_cars(void *userdata, const vrpn_MXRTRAFFIC_CALLBACK t);
 	friend static void VRPN_CALLBACK handle_file_heads_pos_quat(void *userdata, const vrpn_TRACKERCB t);
 	friend static void VRPN_CALLBACK handle_file_body_pos_quat(void *userdata, const vrpn_TRACKERCB t);
-	friend static void VRPN_CALLBACK handle_file_cars(void *userdata, const vrpn_TRACKERCB t);
+	friend static void VRPN_CALLBACK handle_file_cars(void *userdata, const vrpn_MXRTRAFFIC_CALLBACK t);
 	friend static void VRPN_CALLBACK handle_file_msgs(void *userdata, const vrpn_TEXTCB t);
 
 

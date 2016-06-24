@@ -52,7 +52,8 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tG
 
 	headTracker = new vrpn_Tracker_Server(nameHeadsTrk,c,nH);
 	bodiesTracker = new vrpn_Tracker_Server(nameBodiesTrk, c, nB);
-	carsServer = new vrpn_Tracker_Server(nameCars,c,1);
+	carsServer = new vrpn_MxRTrafficGenerator_ProxyServer(nameCars);
+
 	expDir = "";
 	expDir += expDirectory;
 	fileToLoad = "";
@@ -114,8 +115,8 @@ vrpn_WWA_Server::vrpn_WWA_Server(vrpn_Connection *c, const char *nameTxt, int tG
 	}
 	if (strncmp(carsDevice, "NoDevice", 8) != 0)
 	{
-		carReader = new vrpn_Tracker_Remote(carsDevice);
-		carReader->register_change_handler(this, handle_cars);
+		carReader = new vrpn_MxRTrafficGenerator_Remote(carsDevice);
+		carReader->register_trafficupdate_handler(this, handle_cars);
 	}
 
 	printf("WWAServer. Creating WWA_Server with parameters: %s %d %s %s %s %s %d %d %d %d %d %s %d %d %d %d %d %s %s %s %s %s\n", 
@@ -130,8 +131,11 @@ vrpn_WWA_Server::~vrpn_WWA_Server()
 	printf("%s\n", __PRETTY_FUNCTION__);
 #endif
 
-	fflush(debugFile);
-	fclose(debugFile);
+	if (debugFile != NULL)
+	{
+		fflush(debugFile);
+		fclose(debugFile);
+	}
 
 	fprintf(stderr, "WWAServer destroying...\n");
 
@@ -324,7 +328,7 @@ void vrpn_WWA_Server::mainFileMngrThread()
 			devName += "@file://";
 			devName += fileToLoad;
 			printf("WWAServer. Connection to [%s] requested\n", devName.c_str());
-			fileCarReader = new vrpn_Tracker_Remote(devName.c_str());
+			fileCarReader = new vrpn_MxRTrafficGenerator_Remote(devName.c_str());
 			if (fileCarReader == NULL)
 			{
 				// assuming error while creating the file...
@@ -332,7 +336,7 @@ void vrpn_WWA_Server::mainFileMngrThread()
 				threadState = errorReadingFiles;
 				break;
 			}
-			fileCarReader->register_change_handler(this, handle_file_cars);
+			fileCarReader->register_trafficupdate_handler(this, handle_file_cars);
 
 			devName = msgDevName;
 			devName += "@file://";
@@ -438,7 +442,8 @@ void vrpn_WWA_Server::startTrial(const char* origin, int trialId)
 	// To Do: seek to a particular place!
 	serverState = waitingOkTrial;
 	fprintf(stderr, "WWAServer start trial processed: %s %d\n", origin, trialId);
-	fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "startTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
+	if (debugFile != NULL)
+		fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "startTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
 
 	if (vrpn_MxRTrafficGenerator_Server::getInstance() != NULL)
 	{
@@ -462,7 +467,8 @@ void vrpn_WWA_Server::okTrial(const char* origin, int trialId)
 		okTrialCS = true;
 	}
 
-	fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "okTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
+	if (debugFile != NULL)
+		fprintf(debugFile, "%s threadState [%d] serverState [%d] %s %s %s\n", "okTrial", threadState, serverState, okTrialP1 == true ? "true" : "false", okTrialP2 == true ? "true" : "false", okTrialCS == true ? "true" : "false");
 }
 
 void vrpn_WWA_Server::endTrial(const char* origin, int trialId)
@@ -677,11 +683,12 @@ handle_body_pos_quat(void *userdata, const vrpn_TRACKERCB t)
 }
 
 void VRPN_CALLBACK
-handle_cars(void *userdata, const vrpn_TRACKERCB t)
+handle_cars(void *userdata, const vrpn_MXRTRAFFIC_CALLBACK t)
 {
 	vrpn_WWA_Server *obj = static_cast<vrpn_WWA_Server *>(userdata);
 
-	// Process information from car simulator
+	// Just send real data, for the moment...
+	obj->carsServer->report_traffic_data(t.msg_time, t.car_count, t.cars);
 
 }
 
@@ -723,7 +730,7 @@ handle_file_body_pos_quat(void *userdata, const vrpn_TRACKERCB t)
 }
 
 void VRPN_CALLBACK
-handle_file_cars(void *userdata, const vrpn_TRACKERCB t)
+handle_file_cars(void *userdata, const vrpn_MXRTRAFFIC_CALLBACK t)
 {
 	vrpn_WWA_Server *obj = static_cast<vrpn_WWA_Server *>(userdata);
 

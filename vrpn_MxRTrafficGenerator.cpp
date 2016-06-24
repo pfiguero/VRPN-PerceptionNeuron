@@ -6,8 +6,7 @@
 
 const vrpn_int32 MBUFFER_SIZE = 1000;
 
-
-vrpn_MxRTrafficGenerator_Server *vrpn_MxRTrafficGenerator_Server::instance=NULL;
+vrpn_MxRTrafficGenerator_Server *vrpn_MxRTrafficGenerator_Server::instance = NULL;
 
 
 
@@ -84,10 +83,10 @@ vrpn_MxRTrafficGenerator_Server::vrpn_MxRTrafficGenerator_Server(const char *nam
 
 	printf("vrpn_MxRTrafficGenerator_Server. Creating server with parameters: %s %f %f %s %f %f %f %f %f\n",
 		name, trafficBoundSamallZ, trafficBoundLargeZ,
-		startingTrafficDirectionPositiveZ? "true" : "false",
-		trafficSpeed,carLen, gapS, gapM, gapL);
+		startingTrafficDirectionPositiveZ ? "true" : "false",
+		trafficSpeed, carLen, gapS, gapM, gapL);
 
-	if(instance == NULL)
+	if (instance == NULL)
 		instance = this;
 }
 
@@ -184,6 +183,24 @@ vrpn_int32 VRPN_CALLBACK vrpn_MxRTrafficGenerator_Remote::handle_trafficreport_m
 	return 0;
 
 }
+
+vrpn_MxRTrafficGenerator_ProxyServer:: vrpn_MxRTrafficGenerator_ProxyServer(const char * name, vrpn_Connection *c) : vrpn_MxRTrafficGenerator(name, c)
+{}
+
+
+void vrpn_MxRTrafficGenerator_ProxyServer::mainloop()
+{
+	server_mainloop();
+}
+
+void vrpn_MxRTrafficGenerator_ProxyServer::report_traffic_data(const struct timeval t, int car_count, const MXRTRAFFIC_CARDATA* vehicle_data)
+{
+	timestamp = t;
+	active_car_count = car_count;
+	memcpy(car_data, vehicle_data, sizeof(car_data));
+	send_report();
+}
+
 
 void TrafficGenerator::init(vrpn_float32 trafficBoundSmallZ, vrpn_float32 trafficBoundLargeZ, bool startingTrafficDirectionPositiveZ, vrpn_float32 trafficSpeed, vrpn_float32 carLen, vrpn_float32 gapS, vrpn_float32 gapM, vrpn_float32 gapL) {
 	//set random seed 

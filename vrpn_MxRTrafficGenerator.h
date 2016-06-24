@@ -126,8 +126,21 @@ private:
 	TrafficGenerator _traffic;
 
 	static vrpn_MxRTrafficGenerator_Server* instance;
+
 };
 
+
+// Virtual proxy server, which can be used by a vrpn application that does not actually 
+// simulate traffic server, but would like to send a traffic repot
+class VRPN_API vrpn_MxRTrafficGenerator_ProxyServer : public vrpn_MxRTrafficGenerator {
+
+public:
+	vrpn_MxRTrafficGenerator_ProxyServer(const char *name, vrpn_Connection *c=NULL);
+
+	virtual void mainloop();
+
+	virtual void report_traffic_data(const struct timeval t, int car_count, const MXRTRAFFIC_CARDATA* vehicle_data);
+};
 
 
 //----------------------------------------------------------
