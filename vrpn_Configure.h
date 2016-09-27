@@ -236,7 +236,18 @@
 // at run time.  Edit the path below to say where the .lib file
 // can be found.
 //
-//#define VRPN_INCLUDE_PHASESPACE
+// #define VRPN_INCLUDE_PHASESPACE
+
+//------------------------
+// Compiles the VRPN library with the Perception Neuron Tracker using the
+// Perception's API on Windows.
+//
+// The perception header files (i.e. NeuronDataReader.h) and libraries 
+// (i.e. NeuronDataReader.lib) should be placed in the neuron directory
+// at the same level as the vrpn folder. NeuronDataReader.dll need to be 
+// in the path or with the executable at run time. 
+#define VRPN_INCLUDE_PERCEPTION_NEURON
+
 
 //-----------------------
 // Instructs VRPN to use a DLL interface on Windows systems.

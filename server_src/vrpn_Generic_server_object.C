@@ -86,6 +86,7 @@
 #include "vrpn_Tracker_OSVRHackerDevKit.h" // for vrpn_Tracker_OSVRHackerDevKit
 #include "vrpn_Tracker_PDI.h"
 #include "vrpn_Tracker_PhaseSpace.h"
+#include "vrpn_Tracker_PerceptionNeuron.h"
 #include "vrpn_Tracker_RazerHydra.h"      // for vrpn_Tracker_RazerHydra
 #include "vrpn_Tracker_Filter.h"          // for vrpn_Tracker_FilterOneEuro
 #include "vrpn_Tracker_SpacePoint.h"      // for vrpn_Tracker_SpacePoint
@@ -3503,6 +3504,46 @@ int vrpn_Generic_Server_Object::setup_Tracker_PhaseSpace(char *&pch, char *line,
 #endif
 }
 
+
+int vrpn_Generic_Server_Object::setup_Tracker_PerceptionNeuron(char *&, char *line,
+	FILE *config_file)
+{
+	char trackerName[LINESIZE];
+	char device[LINESIZE];
+	char protocol[LINESIZE];
+	int port = 0;
+
+	// get tracker name and device
+	if (sscanf(line, "vrpn_Tracker_PerceptionNeuron %s %s %s %d", trackerName,
+		device, protocol, &port) < 4) {
+		fprintf(stderr, "Bad vrpn_Tracker_PerceptionNeuron line: %s\nProper format "
+			"is:  vrpn_Tracker_PerceptionNeuron [trackerName] [device] "
+			"[tcp/udp] [port]\n",
+			line);
+		return -1;
+	}
+
+#ifdef VRPN_INCLUDE_PERCEPTION_NEURON
+	vrpn_Tracker_PerceptionNeuron *pstracker = new vrpn_Tracker_PerceptionNeuron(
+		trackerName, connection, device, protocol, port);
+
+	if (!pstracker->enableTracker(true)) {
+		fprintf(stderr, "Error, unable to enable Perception Neuron Tracker.\n");
+		delete pstracker;
+		return -1;
+	}
+	_devices->add(pstracker);
+
+	return 0;
+
+#else
+	fprintf(stderr, "vrpn_server: Can't open Perception Neuron server: "
+		"VRPN_INCLUDE_PERCEPTION_NEURON not defined in "
+		"vrpn_Configure.h!\n");
+	config_file = config_file + 1; // Unused parameter, avoid warning.
+	return -1;
+#endif
+}
 int vrpn_Generic_Server_Object::setup_Tracker_RazerHydra(char *&pch, char *line,
                                                          FILE *config_file)
 {
@@ -4990,6 +5031,9 @@ vrpn_Generic_Server_Object::vrpn_Generic_Server_Object(
                 else if (VRPN_ISIT("vrpn_Tracker_PhaseSpace")) {
                     VRPN_CHECK(setup_Tracker_PhaseSpace);
                 }
+				else if (VRPN_ISIT("vrpn_Tracker_PerceptionNeuron")) {
+					VRPN_CHECK(setup_Tracker_PerceptionNeuron);
+				}
                 else if (VRPN_ISIT("vrpn_Auxiliary_Logger_Server_Generic")) {
                     VRPN_CHECK(setup_Logger);
                 }

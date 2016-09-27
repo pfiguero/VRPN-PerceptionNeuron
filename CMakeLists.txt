@@ -813,6 +813,26 @@ if(VRPN_INCLUDE_PHASESPACE)
 endif()
 
 ###
+# Perception Neuron API
+###
+# TODO Actually do a proper search for the Perception Neuron API headers and libraries
+# and not use link_directories.
+option(VRPN_INCLUDE_PERCEPTIONNEURON
+	"Build with Perception Neuron library support"
+	OFF)
+set(PERCEPTIONNEURON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/perceptionneuron" CACHE PATH "location of Perception Neuron headers")
+set(PERCEPTIONNEURON_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/perceptionneuron" CACHE PATH "location of Perception Neuron libraries (NeuronDataReader.dll, etc")
+if(VRPN_INCLUDE_PERCEPTIONNEURON)
+	include_directories(${PERCEPTIONNEURON_INCLUDE_DIR})
+	link_directories(${PERCEPTIONNEURON_LIBRARY_DIR})
+	if(WIN32)
+		list(APPEND SERVER_EXTRA_LIBS NeuronDataReader)
+	else()
+		list(APPEND SERVER_EXTRA_LIBS NeuronDataReader)
+	endif()
+endif()
+
+###
 # Hillcrest Labs' Freespace
 ###
 find_package(LibFreespace)
