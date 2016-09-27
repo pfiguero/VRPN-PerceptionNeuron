@@ -236,7 +236,7 @@
 // at run time.  Edit the path below to say where the .lib file
 // can be found.
 //
-#define VRPN_INCLUDE_PHASESPACE
+// #define VRPN_INCLUDE_PHASESPACE
 
 //------------------------
 // Compiles the VRPN library with the Perception Neuron Tracker using the
@@ -429,12 +429,12 @@
 //------------------------
 //Compile MxR Traffic Generator
 // Added by Timofey Grechkin
-#define VRPN_INCLUDE_MXR_TRAFFIC_GENERATOR
+//#define VRPN_INCLUDE_MXR_TRAFFIC_GENERATOR
 
 //------------------------
 // Instructs VRPN to compile code for the WWA_server demo
 // Added by Pablo Figueroa
-#define VRPN_WWA_SERVER
+//#define VRPN_WWA_SERVER
 
 //------------------------------------------------------------------//
 // SYSTEM CONFIGURATION SECTION                                     //

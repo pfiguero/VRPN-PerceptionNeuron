@@ -127,7 +127,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include;../../dtrack;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include;../../isense;..;../quat;../../Dtrack;../../libfreespace/include;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb;C:\Program Files (x86)\Polhemus\PDI\PDI_90\Inc;%(AdditionalIncludeDirectories);$(DEPS)\phasespace\include;$(DEPS)\neuron\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SYSTEMDRIVE)\Program Files\Microsoft Platform SDK for Windows Server 2003 R2\Include;../../dtrack;$(SYSTEMDRIVE)\Program Files\National Instruments\NI-DAQ\Include;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/include;$(SYSTEMDRIVE)/Program Files/SensAble/3DTouch/utilities/include;../../isense;..;../quat;../../Dtrack;../../libfreespace/include;$(SYSTEMDRIVE)\Program Files\libusb-1.0\libusb;C:\Program Files (x86)\Polhemus\PDI\PDI_90\Inc;%(AdditionalIncludeDirectories);$(DEPS)\phasespace\include;$(DEPS)\neuron\include;C:\Users\pablo\Downloads\NeuronDataReader SDK b15\NeuronDataReader SDK b15\Windows\include</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>.\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.pch</PrecompiledHeaderOutputFile>
@@ -146,14 +146,14 @@
     <Link>
       <OutputFile>.\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SYSTEMDRIVE)\sdk\cpp;$(SYSTEMDRIVE)\Program Files\boost\boost_1_34_1\lib;%(AdditionalLibraryDirectories);$(DEPS)\phasespace\lib;$(DEPS)\neuron\lib\x86;C:\Users\pablo\Downloads\NeuronDataReader SDK b15\NeuronDataReader SDK b15\Windows\lib\x86</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>.\../pc_win32/server_src/vrpn_server/Debug/vrpn_server.pdb</ProgramDatabaseFile>
       <SubSystem>Console</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention />
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);libowlsock.lib;NeuronDataReader.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);NeuronDataReader.lib</AdditionalDependencies>
     </Link>
     <Bscmake>
       <SuppressStartupBanner>true</SuppressStartupBanner>
