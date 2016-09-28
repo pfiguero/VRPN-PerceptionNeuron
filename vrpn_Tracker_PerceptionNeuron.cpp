@@ -45,6 +45,7 @@ public:
 		}
 		handler = h;
 		fprintf(stderr, "PerceptionNeuron tcpPort:[%d] udpPort:[%d] \n", tcpPort, udpPort);
+		fflush(stderr);
 		if (tcpPort != -1 && sockTCPRef == NULL)
 		{
 			sockTCPRef = BRConnectTo(ipNeuron, tcpPort);
@@ -276,7 +277,7 @@ vrpn_Tracker_PerceptionNeuron::vrpn_Tracker_PerceptionNeuron(const char *name, v
 	register_autodeleted_handler(
 		c->register_message_type(vrpn_dropped_last_connection),
 		handle_dropped_last_connection_message, this);
-
+	
 }
 
 //
@@ -297,6 +298,7 @@ bool vrpn_Tracker_PerceptionNeuron::enableTracker(bool enable)
 	if (enable)
 	{
 		resp = PerceptionNeuronHandler::getInstance()->enable(this, ipNeuron, tcpPort, udpPort);
+
 	}
 	else
 	{

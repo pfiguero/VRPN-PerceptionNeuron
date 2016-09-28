@@ -817,12 +817,12 @@ endif()
 ###
 # TODO Actually do a proper search for the Perception Neuron API headers and libraries
 # and not use link_directories.
-option(VRPN_INCLUDE_PERCEPTIONNEURON
+option(VRPN_INCLUDE_PERCEPTION_NEURON
 	"Build with Perception Neuron library support"
 	OFF)
 set(PERCEPTIONNEURON_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/perceptionneuron" CACHE PATH "location of Perception Neuron headers")
 set(PERCEPTIONNEURON_LIBRARY_DIR "${CMAKE_SOURCE_DIR}/perceptionneuron" CACHE PATH "location of Perception Neuron libraries (NeuronDataReader.dll, etc")
-if(VRPN_INCLUDE_PERCEPTIONNEURON)
+if(VRPN_INCLUDE_PERCEPTION_NEURON)
 	include_directories(${PERCEPTIONNEURON_INCLUDE_DIR})
 	link_directories(${PERCEPTIONNEURON_LIBRARY_DIR})
 	if(WIN32)
@@ -830,6 +830,12 @@ if(VRPN_INCLUDE_PERCEPTIONNEURON)
 	else()
 		list(APPEND SERVER_EXTRA_LIBS NeuronDataReader)
 	endif()
+
+add_custom_command(TARGET vrpn_server.exe POST_BUILD        # Adds a post-build event to MyTest
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different  # which executes "cmake - E copy_if_different..."
+        "${PERCEPTIONNEURON_LIBRARY_DIR}/NeuronDataReader.dll"      # <--this is in-file
+        $<TARGET_FILE_DIR:vrpn_server.exe>)                 # <--this is out-file path
+		
 endif()
 
 ###
@@ -1112,6 +1118,7 @@ set(VRPN_SERVER_SOURCES
 	vrpn_Tracker_OSVRHackerDevKit.C
 	vrpn_Tracker_PDI.C
 	vrpn_Tracker_PhaseSpace.C
+	vrpn_Tracker_PerceptionNeuron.cpp
 	vrpn_Tracker_RazerHydra.C
 	vrpn_Tracker_SpacePoint.C
 	vrpn_Tracker_Wintracker.C
@@ -1216,6 +1223,7 @@ set(VRPN_SERVER_PUBLIC_HEADERS
 	vrpn_Tracker_OSVRHackerDevKit.h
 	vrpn_Tracker_PDI.h
 	vrpn_Tracker_PhaseSpace.h
+	vrpn_Tracker_PerceptionNeuron.h
 	vrpn_Tracker_RazerHydra.h
 	vrpn_Tracker_SpacePoint.h
 	vrpn_Tracker_Wintracker.h
